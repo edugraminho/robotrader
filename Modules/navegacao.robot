@@ -29,7 +29,7 @@ Abrir Navegador
 
 Aguardar Pagina Carregar
     [Arguments]    ${header}
-    ${status}    Run Keyword And Return Status    Wait Until Element Is Visible    ${header}    timeout=3
+    ${status}    Run Keyword And Return Status    Wait Until Element Is Visible    ${header}    timeout=5s
 
     [Return]    ${status}
 

@@ -6,7 +6,7 @@ from robot.api import logger
 from datetime import datetime
 import pandas as pd
 
-def insert_csv(value, index_signal, index, status):
+def insert_csv(value, index_signal, index):
     try:
         now = datetime.now().strftime("%d/%m-%H:%M")
         fieldname = [
@@ -27,8 +27,9 @@ def insert_csv(value, index_signal, index, status):
         closed_signal = re.search('Closed|All entry|All take-profit', value)
 
         crypto_name = None
-        direction = None
+        direction_type = None
         signal_type = None
+        insert = False
         
         if new_crypto != None:
             crypto_name = new_crypto[0].strip()
@@ -39,9 +40,11 @@ def insert_csv(value, index_signal, index, status):
         
         if closed_signal != None:
             signal_type = "closed"
+            insert = True
 
         if direction != None:
-            direction = direction[0].strip()
+            direction_type = direction[0].strip().lower()
+            insert = True
         else:
             direction = "-"
 
@@ -51,15 +54,15 @@ def insert_csv(value, index_signal, index, status):
             if (os.stat(f"{DATA_DIRECTORY}\\market.csv").st_size == 0):
                 writer.writeheader()
 
-            if crypto_name != None and index_signal:
+            if insert:
                 writer.writerow({
                     "index": int(index),
                     "index_signal": index_signal,
                     "date": now,
                     "crypto_name": crypto_name,
-                    "direction": direction,
+                    "direction": direction_type,
                     "signal_type": signal_type,  
-                    "status": status
+                    "status": "-"
                 })
                 
     except Exception as e:
@@ -74,8 +77,7 @@ def last_line_index_signal():
             reader = f.readlines()[-1].split(",")
             return int(reader[1]) + 1
     except Exception as e:
-        logger.error(
-            f"Falha ao retornar o ultimo index_signal. Detalhes: {e}")
+        return ''
 
 
 def last_spot_dict():
@@ -105,8 +107,7 @@ def last_index():
             return int(reader[0]) + 1
 
     except Exception as e:
-        logger.error(
-            f"Falha ao retornar o ultimo index. Detalhes: {e}")
+        return ''
 
 
 

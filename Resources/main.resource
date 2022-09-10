@@ -10,6 +10,7 @@ Library    RPA.Tasks
 #========= Custom Libraries ==========
 Library    ${ROOT}/Libraries/chromedriver_utils.py
 Library    ${ROOT}/Libraries/utils.py
+Library    ${ROOT}/Libraries/telegram_api.py
 
 #========= Keywords ==========
 Resource    ${ROOT}/Modules/navegacao.robot

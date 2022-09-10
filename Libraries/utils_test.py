@@ -99,7 +99,7 @@ def insert_csv(value):
         direction = "-"
 
 
-insert_csv(value)
+# insert_csv(value)
 
 def read_csv():
     new_dict = []
@@ -220,3 +220,6 @@ def last_spot_dict():
                 }
         return spot
 # print(last_spot_dict())
+
+
+

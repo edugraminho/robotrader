@@ -55,7 +55,8 @@
 
 
 &{telegram}
-...    group=xpath://*[@class="chatlist"]/a[1]
+...    group=xpath://*[contains(text(),"Brazza Scalping Vip")]/../../../..
+...    search=xpath://*[@id="telegram-search-input"]
 
 ...    msg_body=xpath://div[@data-message-id="{counter}"]//*[@class="text-content with-meta"]
 

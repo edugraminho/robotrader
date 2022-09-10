@@ -7,10 +7,13 @@ Resource    ${ROOT}/Resources/main.resource
 Abrir Browser
     [Documentation]    Task que abre o browser e retorna seu status
 
-    ${status_sig}    Run Keyword And Return Status    Abrir Navegador    ${URL_SIGNALS}
-    Entrar Telegram
+    get_messages_group
 
-    Capturar lista
+    # ${status_sig}    Run Keyword And Return Status    Abrir Navegador    ${URL_SIGNALS}
+
+    # Entrar Grupo Telegram
+
+    # Capturar lista
 
     # ${status}    Run Keyword And Return Status    Abrir Navegador    ${URL}
     # ${bin_status}    Aguardar Pagina Carregar    ${navegacao.header}
@@ -30,7 +33,7 @@ Fluxo de Compra e Venda
 Finaliza Processo
     [Documentation]    Task de finalização do robô
 
-    Log    Finalizando Processo!    level=INFO
+    Log    Finalizando Processo!    console=True
     Fechar Navegador
 
 # TODO
