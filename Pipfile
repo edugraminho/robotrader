@@ -1,0 +1,24 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pycodestyle = "*"
+autopep8 = "*"
+requests = "*"
+
+[packages]
+robotframework = "==5.0.1"
+robotframework-debuglibrary = "==2.3.0"
+robotframework-seleniumlibrary = "*"
+rpaframework = "==15.7.0"
+selenium = "*"
+pandas = "*"
+
+
+[requires]
+python_version = "3.10"
+
+[scripts]
+robot ="robot -V Variables/config.py -d Outputs/ --loglevel INFO -P ./ Tasks/trader.robot"

@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+        "robot.variables": {
+            "ROOT":"C:\\Projects\\robotrader"
+        },
+        "robot.pythonpath" : ["C:\\Users\\efgra\\.virtualenvs\\robotrader-CVNjuBYJ\\Scripts\\python.exe"],
+       
+        "robot.lint.robocop.enabled": true,
+        "autoDocstring.docstringFormat": "sphinx",
+        "liveshare.alwaysFollowHost": true,
+        "python.languageServer": "Pylance",
+        "robot.language-server.python" : "C:\\Users\\efgra\\.virtualenvs\\robotrader-CVNjuBYJ\\Scripts\\python.exe"
+	}
+}
