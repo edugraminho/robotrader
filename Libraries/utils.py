@@ -1,10 +1,17 @@
 import os
 import csv
 import re
-from Variables.config import *
-from robot.api import logger
 from datetime import datetime
 import pandas as pd
+from pathlib import Path, PurePath
+import os
+from datetime import datetime
+
+
+
+ROOT = Path(os.path.dirname(os.path.abspath(__file__))).parent
+NOW = datetime.now().strftime("%d%m - %H:%M")
+DATA_DIRECTORY = os.path.join(ROOT, "Data")
 
 def insert_csv(value, index_signal, index):
     try:
@@ -66,7 +73,7 @@ def insert_csv(value, index_signal, index):
                 })
                 
     except Exception as e:
-        logger.error(
+        print(
             f"Falha ao inserir CSV. Detalhes: {e}")
 
 
@@ -78,7 +85,6 @@ def last_line_index_signal():
             return int(reader[1]) + 1
     except Exception as e:
         return ''
-
 
 def last_spot_dict():
     try:
@@ -95,7 +101,7 @@ def last_spot_dict():
                     }
             return spot
     except Exception as e:
-        logger.error(
+        print(
             f"Falha ao retornar o ultimo dicionario de SPOTs. Detalhes: {e}")
 
 
@@ -118,7 +124,7 @@ def last_line_status():
             reader = f.readlines()[-1].split(",")
             return str(reader[6].strip())
     except Exception as e:
-        logger.error(
+        print(
             f"Falha ao pegar o ultimo status. Detalhes: {e}")
 
 
@@ -130,7 +136,7 @@ def read_csv():
             csv_list.append(row)
     return csv_list
 
-
+"""
 def pay_a_percentage(balance):
     value = int(balance) * (1 - PURCHASE_PERCENTAGE / 100)
     return PURCHASE_VALUE 
@@ -158,7 +164,7 @@ def convert_balance_crypto_to_float(str_balance):
 
         return float(number)
     except Exception as e:
-        logger.error(
+        print(
             f"Falha ao converter balanco para float. Detalhes: {e}")
 
 
@@ -174,7 +180,7 @@ def convert_balance_crypto_to_stop(str_balance):
         return str(int(number))
 
     except Exception as e:
-        logger.error(
+        print(
             f"Falha ao converter balanco stop. Detalhes: {e}")
 
 
@@ -186,5 +192,6 @@ def insert_csv_buy_or_sell(c_index, b_or_s):
         df.to_csv(f"{DATA_DIRECTORY}/market.csv", index=False)
 
     except Exception as e:
-            logger.error(
+            print(
                 f"Falha na inserção do status de compra e venda no CSV. Detalhes: {e}")
+"""
