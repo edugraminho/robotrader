@@ -1,29 +1,20 @@
 import os
 import csv
 import re
-from datetime import datetime
 import pandas as pd
-from pathlib import Path, PurePath
-import os
-from datetime import datetime
+from Variables.config import *
 
 
-
-ROOT = Path(os.path.dirname(os.path.abspath(__file__))).parent
-NOW = datetime.now().strftime("%d%m - %H:%M")
-DATA_DIRECTORY = os.path.join(ROOT, "Data")
-
-def insert_csv(value, index_signal, index):
+def insert_csv(value, date, index):
     try:
-        now = datetime.now().strftime("%d/%m-%H:%M")
         fieldname = [
             "index",
-            "index_signal",
             "date",
             "crypto_name",
             "direction",
             "signal_type", 
-            "status"
+            "status",
+            "order_id"
             ]
 
         new_crypto = re.search('(?<=I... )(.[^#]*USDT)', value)
@@ -55,26 +46,24 @@ def insert_csv(value, index_signal, index):
         else:
             direction = "-"
 
-        with open(f"{DATA_DIRECTORY}\\market.csv", "a",encoding="utf-8", newline='') as f:
+        with open(f"{DATA_DIRECTORY}/market.csv", "a",encoding="utf-8", newline='') as f:
             writer = csv.DictWriter(f, fieldnames=fieldname)
 
-            if (os.stat(f"{DATA_DIRECTORY}\\market.csv").st_size == 0):
+            if (os.stat(f"{DATA_DIRECTORY}/market.csv").st_size == 0):
                 writer.writeheader()
 
             if insert:
                 writer.writerow({
-                    "index": int(index),
-                    "index_signal": index_signal,
-                    "date": now,
+                    "index": index,
+                    "date": date.strftime("%d-%m-%y %H:%M"),
                     "crypto_name": crypto_name,
                     "direction": direction_type,
-                    "signal_type": signal_type,  
-                    "status": "-"
+                    "signal_type": signal_type
                 })
                 
     except Exception as e:
-        print(
-            f"Falha ao inserir CSV. Detalhes: {e}")
+        print(f"Falha ao inserir CSV. Detalhes: {e}")
+        raise e
 
 
 def last_line_index_signal():
@@ -136,6 +125,20 @@ def read_csv():
             csv_list.append(row)
     return csv_list
 
+
+
+def insert_csv_status(c_index, b_or_s):
+    try:
+        df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
+        ind = df.loc[lambda df: df['index'] == int(c_index)]
+        df._set_value(ind.index[0],'status',b_or_s)
+        df.to_csv(f"{DATA_DIRECTORY}/market.csv", index=False)
+
+    except Exception as e:
+        print(f"Falha na inserção do status de compra e venda no CSV.Detalhes: {e}")
+        raise e
+            
+
 """
 def pay_a_percentage(balance):
     value = int(balance) * (1 - PURCHASE_PERCENTAGE / 100)
@@ -184,14 +187,4 @@ def convert_balance_crypto_to_stop(str_balance):
             f"Falha ao converter balanco stop. Detalhes: {e}")
 
 
-def insert_csv_buy_or_sell(c_index, b_or_s):
-    try:
-        df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
-        ind = df.loc[lambda df: df['index'] == int(c_index)]
-        df._set_value(ind.index[0],'buy_or_sell',b_or_s)
-        df.to_csv(f"{DATA_DIRECTORY}/market.csv", index=False)
-
-    except Exception as e:
-            print(
-                f"Falha na inserção do status de compra e venda no CSV. Detalhes: {e}")
 """
