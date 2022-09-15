@@ -1,5 +1,9 @@
 # README #
 
+Iniciar Projeto
+pipenv run python trader.py 
+
+
 App api_id:
 11074177
 

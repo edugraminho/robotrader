@@ -11,6 +11,10 @@ import time
 API_KEY = "L8vTV38sqckhCZCT403TlRqxZHSGuASm95QckB9y5Hmg6g1OUddff79Y1k9DGGLb"
 API_SECRET = "X4TE8ehw2891qrLgT4iQSoFn6kwnQXy1V6ispA34cdWf0kq9PXP9Xa1d1EW880Nt"
 
+PERCENTAGE_BUY = 5
+
+PERCENTAGE_STOP = 3
+
 client = Client(API_KEY, API_SECRET)
 
 
@@ -30,6 +34,8 @@ def get_current_price_crypto(crypto):
 
 def create_order_buy_long_or_short(index, crypto, buy_or_sell, direction, quantity):
 
+    # para encontrar o quantidade, tenho q pegar meu saldo + 20x
+
     res = client.futures_create_order(
         symbol=crypto,
         side=buy_or_sell,
@@ -39,8 +45,7 @@ def create_order_buy_long_or_short(index, crypto, buy_or_sell, direction, quanti
         quantity=quantity
         )
 
-    # if res["status"] == "NEW":
-    #     insert_csv_status(index, buy_or_sell, res['orderId'])
+
     return res['status']
 
     # pegar o retorno e armnazenar o orderId
@@ -75,7 +80,8 @@ def create_stop_limit(crypto, buy_or_sell, direction, quantity):
     price = get_current_price_crypto(crypto)
     #deconto de 1%
     print(price)
-    value =  price - (price * 0.03)
+    perc = PERCENTAGE_STOP / 100
+    value =  price - (price * perc)
     print(value)
 
     # info = client.get_symbol_info(crypto)
@@ -92,7 +98,7 @@ def create_stop_limit(crypto, buy_or_sell, direction, quantity):
     
     return order['status']
 
-print(create_stop_limit('BTCUSDT', 'SELL' ,'LONG', 0.001))
+# print(create_stop_limit('BTCUSDT', 'SELL' ,'LONG', 0.001))
 
 def closed_market(index, crypto, direction):
     try:
@@ -124,9 +130,29 @@ def closed_market(index, crypto, direction):
 # print(closed_market(1, "ETHUSDT", "LONG"))
 
 
-def get_quantity(crypto):
+def get_balance():
     # para obter a quantidade comprada
-    my_trades = client.get_my_trades(symbol=crypto)
-    for trade in my_trades:
-        if trade['isBuyer']:
-            return trade['price']
+    balances = client.futures_account_balance()
+    wallet = []
+
+    for b in balances:
+        if 'USDT' in b.values():
+            wallet.append({
+                "total_balance": round(float(b["balance"]), 2),
+                "available_balance": round(float(b["withdrawAvailable"]), 2)
+                })
+
+    return wallet
+
+
+
+def find_value_to_aport(crypto):
+    price_crypto = get_current_price_crypto(crypto)
+    value_available = get_balance()[0]["available_balance"]
+
+    percentage = PERCENTAGE_BUY / 100
+
+    return ((value_available * 20) * percentage) / price_crypto
+
+
+print(find_value_to_aport("ETHUSDT"))
