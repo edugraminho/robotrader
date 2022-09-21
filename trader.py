@@ -36,3 +36,8 @@ main()
 
 # testar como se comporta quando tem duas posicoes, LONG e SHORT
 # adicionar STOP_LOSS
+
+# adicionar o valor de compra no csv. Percorrer ele, para cada crypto acionar buscar o valor da moeda atual.  get_current_price_crypto
+# Caso seja short, >= current value + 3% - se positivo vende na hora.
+# Caso seja long, <= current value - 3% - se positivo vende na hora.
+# Chamando a funcao closed_market
