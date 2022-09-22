@@ -14,7 +14,8 @@ def insert_csv(value, date, index):
             "direction",
             "signal_type", 
             "status",
-            "order_id"
+            "order_id",
+            "price_buy"
             ]
 
         new_crypto = re.search('(?<=I... )(.[^#]*USDT)', value)
@@ -60,6 +61,9 @@ def insert_csv(value, date, index):
                     "direction": direction_type,
                     "signal_type": signal_type
                 })
+
+                return True
+            return False
                 
     except Exception as e:
         print(f"Falha ao inserir CSV. Detalhes: {e}")
@@ -81,12 +85,13 @@ def last_spot_dict():
             reader = f.readlines()[-1].split(",")
             spot = {
                     "index": int(reader[0].rstrip()),
-                    "index_signal": int(reader[1].rstrip()),
-                    "date": str(reader[4].rstrip()), 
-                    "crypto_name": str(reader[2].rstrip()),
-                    "signal_type" : str(reader[3].rstrip()), 
-                    "hour_spot": str(reader[5].rstrip()),
-                    "buy_or_sell": str(reader[6].rstrip())
+                    "date": int(reader[1].rstrip()),
+                    "crypto_name": str(reader[2].rstrip()), 
+                    "direction": str(reader[3].rstrip()),
+                    "signal_type" : str(reader[4].rstrip()), 
+                    "status": str(reader[5].rstrip()),
+                    "order_id": str(reader[6].rstrip()),
+                    "price_buy":str(reader[7].rstrip())
                     }
             return spot
     except Exception as e:
@@ -99,7 +104,7 @@ def last_index():
     try:
         with open(f"{DATA_DIRECTORY}/market.csv", "r",encoding="utf-8", newline='') as f:
             reader = f.readlines()[-1].split(",")
-            return int(reader[0]) + 1
+            return int(reader[0])
 
     except Exception as e:
         return ''
@@ -127,11 +132,15 @@ def read_csv():
 
 
 
-def insert_csv_status(c_index, b_or_s):
+def insert_csv_status(c_index, b_or_s, order_id, price_buy):
     try:
         df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
         ind = df.loc[lambda df: df['index'] == int(c_index)]
         df._set_value(ind.index[0],'status',b_or_s)
+
+        df._set_value(ind.index[0],'order_id',order_id)
+        df._set_value(ind.index[0],'price_buy',price_buy)
+
         df.to_csv(f"{DATA_DIRECTORY}/market.csv", index=False)
 
     except Exception as e:

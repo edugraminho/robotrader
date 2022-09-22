@@ -15,6 +15,7 @@ pandas = "*"
 tqdm = "*"
 binance-futures-connector= "*"
 python-binance= "*"
+socks = "*"
 
 [requires]
 python_version = "*"

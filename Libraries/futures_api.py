@@ -2,8 +2,7 @@ from binance.client import Client
 from binance.enums import *
 from binance.exceptions import BinanceAPIException
 from datetime import datetime
-import time
-# from utils import *
+from Libraries.utils import *
 
 # from binance.cm_futures import CMFutures
 # futures_client = CMFutures(API_KEY, API_SECRET)
@@ -76,7 +75,7 @@ def create_order_buy_long_or_short(index, crypto, buy_or_sell, direction, quanti
 
 # print(create_order_buy_long_or_short(1,'BTCUSDT', 'BUY' ,'LONG', 0.001))
 
-def create_stop_limit(crypto, buy_or_sell, direction, quantity):
+def calculate_stop_limit(index, crypto, direction, price_buy):
     price = get_current_price_crypto(crypto)
     #deconto de 1%
     print(price)
@@ -84,40 +83,32 @@ def create_stop_limit(crypto, buy_or_sell, direction, quantity):
     value =  price - (price * perc)
     print(value)
 
-    # info = client.get_symbol_info(crypto)
-    # print(info)
+    if price_buy <= value:
+        order = closed_market(index, crypto, direction)
 
-    order = client.futures_create_order(
-        symbol='BTCUSDT',
-        type='STOP_MARKET',
-        side='BUY',
-        direction='LONG',
-        stopPrice=int(value),
-        closePosition=True
-   )
     
-    return order['status']
+    return order
 
 # print(create_stop_limit('BTCUSDT', 'SELL' ,'LONG', 0.001))
 
 def closed_market(index, crypto, direction):
     try:
 
-        create_order = client.futures_create_order(
+        res = client.futures_create_order(
             symbol=crypto,
             side="SELL",
             positionSide=direction,
             dualSidePosition= False,
             type='MARKET',
-            quantity=100,
+            quantity=99999,
             )
 
 
-        if create_order:
-            print("deu", create_order)
-            # insert_csv_status(index, buy_or_sell, res['orderId'])
+        if res:
+            print("deu", res)
+            insert_csv_status(index, "SELL", res['orderId'])
 
-        return create_order
+        return res
     except ValueError as e:
 
         raise BinanceAPIException(e.response, e.status_code, e.text)
@@ -155,4 +146,4 @@ def find_value_to_aport(crypto):
     return ((value_available * 20) * percentage) / price_crypto
 
 
-print(find_value_to_aport("ETHUSDT"))
+#print(find_value_to_aport("ETHUSDT"))
