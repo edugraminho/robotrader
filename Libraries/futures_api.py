@@ -45,7 +45,7 @@ def create_order_buy_long_or_short(index, crypto, buy_or_sell, direction, quanti
         )
 
 
-    return res['status']
+    return res
 
     # pegar o retorno e armnazenar o orderId
     futures_order = {
@@ -75,19 +75,7 @@ def create_order_buy_long_or_short(index, crypto, buy_or_sell, direction, quanti
 
 # print(create_order_buy_long_or_short(1,'BTCUSDT', 'BUY' ,'LONG', 0.001))
 
-def calculate_stop_limit(index, crypto, direction, price_buy):
-    price = get_current_price_crypto(crypto)
-    #deconto de 1%
-    print(price)
-    perc = PERCENTAGE_STOP / 100
-    value =  price - (price * perc)
-    print(value)
 
-    if price_buy <= value:
-        order = closed_market(index, crypto, direction)
-
-    
-    return order
 
 # print(create_stop_limit('BTCUSDT', 'SELL' ,'LONG', 0.001))
 
@@ -100,13 +88,8 @@ def closed_market(index, crypto, direction):
             positionSide=direction,
             dualSidePosition= False,
             type='MARKET',
-            quantity=99999,
+            quantity=999,
             )
-
-
-        if res:
-            print("deu", res)
-            insert_csv_status(index, "SELL", res['orderId'])
 
         return res
     except ValueError as e:
@@ -143,7 +126,40 @@ def find_value_to_aport(crypto):
 
     percentage = PERCENTAGE_BUY / 100
 
-    return ((value_available * 20) * percentage) / price_crypto
+    return round(float(((value_available * 20) * percentage) / price_crypto), 2)
 
 
-#print(find_value_to_aport("ETHUSDT"))
+def calculate_price_stop_limit(crypto):
+    cur_price = get_current_price_crypto(crypto)
+    #deconto de 1%
+    perc = PERCENTAGE_STOP / 100
+    stop_price =  cur_price - (cur_price * perc)
+
+    print("stop_price", round(float(stop_price)), 2)
+    return round(float(stop_price))
+
+
+
+
+def stop_loss_closed():
+
+    print("Verificando Stop loss")
+    cryptos_data = read_csv()
+    for c in cryptos_data:
+        cur_price = get_current_price_crypto(c["crypto_name"])
+        
+        if c["status"] == "BUY" and c["direction"] == "LONG":
+            if float(cur_price) <= float(c["stop_price"]):
+                print(f'Efetuando StopLoss, crypto: {c["crypto_name"]}')
+                order = closed_market(c["index"], c["crypto_name"], c["direction"])
+
+                return (True, order)
+
+        if c["status"] == "BUY" and c["direction"] == "SHORT":
+            if float(cur_price) >= float(c["stop_price"]):
+                print(f'Efetuando StopLoss, crypto: {c["crypto_name"]}')
+                order = closed_market(c["index"], c["crypto_name"], c["direction"])
+
+                return (True, order)
+
+    return (False, "NOP")

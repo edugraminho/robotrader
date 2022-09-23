@@ -15,7 +15,9 @@ def insert_csv(value, date, index):
             "signal_type", 
             "status",
             "order_id",
-            "price_buy"
+            "price_buy",
+            "stop_price",
+            "qtd"
             ]
 
         new_crypto = re.search('(?<=I... )(.[^#]*USDT)', value)
@@ -31,21 +33,20 @@ def insert_csv(value, date, index):
         insert = False
         
         if new_crypto != None:
-            crypto_name = new_crypto[0].strip()
-            signal_type = "new"
+            crypto_name = new_crypto[0].strip().upper()
+            signal_type = "NEW"
 
         if closed_crypto != None:
-            crypto_name = closed_crypto[0].strip().replace("/", "")
+            crypto_name = closed_crypto[0].strip().replace("/", "").upper()
         
         if closed_signal != None:
-            signal_type = "closed"
+            signal_type = "CLOSED"
             insert = True
 
         if direction != None:
-            direction_type = direction[0].strip().lower()
+            direction_type = direction[0].strip().upper()
             insert = True
-        else:
-            direction = "-"
+
 
         with open(f"{DATA_DIRECTORY}/market.csv", "a",encoding="utf-8", newline='') as f:
             writer = csv.DictWriter(f, fieldnames=fieldname)
@@ -85,13 +86,15 @@ def last_spot_dict():
             reader = f.readlines()[-1].split(",")
             spot = {
                     "index": int(reader[0].rstrip()),
-                    "date": int(reader[1].rstrip()),
+                    "date": reader[1].rstrip(),
                     "crypto_name": str(reader[2].rstrip()), 
                     "direction": str(reader[3].rstrip()),
                     "signal_type" : str(reader[4].rstrip()), 
                     "status": str(reader[5].rstrip()),
                     "order_id": str(reader[6].rstrip()),
-                    "price_buy":str(reader[7].rstrip())
+                    "price_buy":reader[7].rstrip(),
+                    "stop_price":reader[8].rstrip(),
+                    "qtd": str(reader[9].rstrip())
                     }
             return spot
     except Exception as e:
@@ -132,20 +135,34 @@ def read_csv():
 
 
 
-def insert_csv_status(c_index, b_or_s, order_id, price_buy):
+def insert_csv_status(c_index, b_or_s, order_id, price_buy, stop_price, qtd):
     try:
         df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
         ind = df.loc[lambda df: df['index'] == int(c_index)]
-        df._set_value(ind.index[0],'status',b_or_s)
+        if not ind.empty:
+            df._set_value(ind.index[0],'status',b_or_s)
+            df._set_value(ind.index[0],'order_id',order_id)
+            df._set_value(ind.index[0],'price_buy',price_buy)
+            df._set_value(ind.index[0],'stop_price',stop_price)
+            df._set_value(ind.index[0],'qtd',qtd)
 
-        df._set_value(ind.index[0],'order_id',order_id)
-        df._set_value(ind.index[0],'price_buy',price_buy)
 
         df.to_csv(f"{DATA_DIRECTORY}/market.csv", index=False)
 
     except Exception as e:
         print(f"Falha na inserção do status de compra e venda no CSV.Detalhes: {e}")
         raise e
+
+
+def check_its_repeated(index):
+    try:
+        df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
+        ind = df.loc[lambda df: df['index'] == int(index)]
+        return ind.empty
+
+    except:
+        return True
+            
             
 
 """

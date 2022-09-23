@@ -1,7 +1,7 @@
 from telethon.sync import TelegramClient
 from telethon import functions, events, types
 from Variables.config import *
-from Libraries.utils import insert_csv, last_index
+from Libraries.utils import *
 
 import time
 import socks
@@ -38,19 +38,21 @@ def get_messages_group():
         for chat in result.chats:
             if chat.title == title:
                 while True:
-                    messages = client.get_messages(chat, limit=10)
+                    messages = client.get_messages(chat, limit=1)
                     for message in messages:
                         last = last_index()
                         if last != int(message.id):
-                            res = insert_csv(message.message, message.date, message.id)
-                            if res:
-                                print(50*'*')
-                                print(message.id)
-                                print(message.message)
-                                if message.reply_to:
-                                    print("reposta: ", message.reply_to.reply_to_msg_id)
+                            check_csv = check_its_repeated(message.id)
+                            if check_csv:
+                                res = insert_csv(message.message, message.date, message.id)
+                                if res:
+                                    print(50*'*')
+                                    print(message.id)
+                                    print(message.message)
+                                    #    if message.reply_to:
+                                    #        print("reposta: ", message.reply_to.reply_to_msg_id)
 
-                        time.sleep(10)
+                        time.sleep(5)
 
         
     except Exception as e:
