@@ -88,7 +88,7 @@ def closed_market(index, crypto, direction):
             positionSide=direction,
             dualSidePosition= False,
             type='MARKET',
-            quantity=999,
+            quantity=9999,
             )
 
         return res
@@ -119,26 +119,34 @@ def find_value_to_aport(crypto):
     price_crypto = get_current_price_crypto(crypto)
     value_available = get_balance()[0]["available_balance"]
 
+    print("price_crypto", price_crypto)
+
     percentage = PERCENTAGE_BUY / 100
 
-    return round(float(((value_available * 20) * percentage) / price_crypto), 2)
+    _value = ((value_available * 20) * percentage) / price_crypto
+
+    if _value < 1:
+        return round(float(_value), 4)
+    else:
+        return int(_value)
 
 
 def calculate_price_stop_limit(crypto):
-    cur_price = get_current_price_crypto(crypto)
-    #deconto de 1%
-    perc = PERCENTAGE_STOP / 100
-    stop_price =  cur_price - (cur_price * perc)
+    try: 
+        cur_price = get_current_price_crypto(crypto)
+        #deconto de 1%
+        perc = PERCENTAGE_STOP / 100
+        stop_price =  round(float(cur_price - (cur_price * perc)), 2)
+        print("Adicionando stop_price: ", crypto)
 
-    print("stop_price", round(float(stop_price)), 2)
-    return round(float(stop_price))
-
-
+        return stop_price
+    except Exception as e:
+        print(f"calculate_price_stop_limit. Erro: {e}")
+        pass
 
 
 def stop_loss_closed():
 
-    print("Verificando Stop loss")
     cryptos_data = read_csv()
     for c in cryptos_data:
         cur_price = get_current_price_crypto(c["crypto_name"])
@@ -147,13 +155,14 @@ def stop_loss_closed():
             if float(cur_price) <= float(c["stop_price"]):
                 print(f'Efetuando StopLoss, crypto: {c["crypto_name"]}')
                 order = closed_market(c["index"], c["crypto_name"], c["direction"])
-
+                print(f'STOP LOSS: {c["index"]} - {c["crypto_name"]} - {c["direction"]}')
                 return (True, order)
 
         if c["status"] == "BUY" and c["direction"] == "SHORT":
             if float(cur_price) >= float(c["stop_price"]):
                 print(f'Efetuando StopLoss, crypto: {c["crypto_name"]}')
                 order = closed_market(c["index"], c["crypto_name"], c["direction"])
+                print(f'STOP LOSS: {c["index"]} - {c["crypto_name"]} - {c["direction"]}')
 
                 return (True, order)
 

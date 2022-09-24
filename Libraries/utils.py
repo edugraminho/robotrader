@@ -68,7 +68,7 @@ def insert_csv(value, date, index):
                 
     except Exception as e:
         print(f"Falha ao inserir CSV. Detalhes: {e}")
-        raise e
+        pass
 
 
 def last_line_index_signal():
@@ -78,7 +78,8 @@ def last_line_index_signal():
             reader = f.readlines()[-1].split(",")
             return int(reader[1]) + 1
     except Exception as e:
-        return ''
+        print(f'Error last_line_index_signal: {e}')
+        pass
 
 def last_spot_dict():
     try:
@@ -100,6 +101,7 @@ def last_spot_dict():
     except Exception as e:
         print(
             f"Falha ao retornar o ultimo dicionario de SPOTs. Detalhes: {e}")
+        pass
 
 
 def last_index():
@@ -150,8 +152,8 @@ def insert_csv_status(c_index, b_or_s, order_id=0, price_buy=0, stop_price=0, qt
         df.to_csv(f"{DATA_DIRECTORY}/market.csv", index=False)
 
     except Exception as e:
-        print(f"Falha na inserção do status de compra e venda no CSV.Detalhes: {e}")
-        raise e
+        print(f"Falha na inserção do status. Erro: {e}")
+        pass
 
 
 def check_its_repeated(index):

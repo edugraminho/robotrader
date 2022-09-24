@@ -34,10 +34,6 @@ def connect():
 
 def get_messages_group(client):
     try:
-        # proxy = (socks.SOCKS5, "45.239.152.141", "3001")
-        # client = TelegramClient(proxy=proxy, session=f'{DATA_DIRECTORY}/session_name', api_id=API_ID, api_hash=API_HASH)
-        # client.connect()
-
 
         result = client(functions.messages.GetDialogsRequest(
             offset_date=None,
@@ -46,7 +42,6 @@ def get_messages_group(client):
             limit=500,
             hash=-0,
         ))
-        print("Buscando Mensagens")
         title = "Brazza Scalping Vip"
         for chat in result.chats:
             if chat.title == title:
@@ -56,7 +51,7 @@ def get_messages_group(client):
                     if check_csv:
                         res = insert_csv(message.message, message.date, message.id)
                         if res:
-                            print(f"Inserindo Spot no csv, ID: {message.id}")
+                            print(f"Novo SPOT, ID: {message.id}")
 
                     # time.sleep(3)
 

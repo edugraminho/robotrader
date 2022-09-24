@@ -52,3 +52,6 @@ t6N/byY9Nw9p21Og3AoXSL2q/2IJ1WRUhebgAdGVMlV1fkuOQoEzR7EdpqtQD9Cs
         print(e.response)
         print(e.request)
         print(e.code)
+
+
+

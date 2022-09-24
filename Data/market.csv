@@ -1,2 +1,2 @@
 index,date,crypto_name,direction,signal_type,status,order_id,price_buy,stop_price,qtd
-68932,23-09-22 20:58,KAVAUSDT,,CLOSED,NOT TRADED,0.0,0.0,0.0,0.0
+68900,23-09-22 21:59,ETHUSDT,LONG,NEW,,,,,
