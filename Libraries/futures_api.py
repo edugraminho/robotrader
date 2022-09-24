@@ -88,12 +88,13 @@ def closed_market(index, crypto, direction):
             positionSide=direction,
             dualSidePosition= False,
             type='MARKET',
-            quantity=9999,
+            quantity=999,
             )
 
         return res
-    except:
-        return {"status": "ERROR"}
+    except Exception as e:
+        # print(f"closed_market. Erro: {e}")
+        pass
 
 
 # print(closed_market(1, "ETHUSDT", "LONG"))
@@ -126,7 +127,7 @@ def find_value_to_aport(crypto):
     _value = ((value_available * 20) * percentage) / price_crypto
 
     if _value < 1:
-        return round(float(_value), 4)
+        return round(float(_value), 3)
     else:
         return int(_value)
 

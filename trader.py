@@ -59,7 +59,7 @@ def trade():
         ########################################################################
         ############################### CLOSED #################################
         if last_spot["signal_type"] == "CLOSED" and \
-            last_spot["status"] != "NOT TRADED":
+            last_spot["status"] == "" :
             print(50*"=")
             print(f'Nova ordem de VENDA, id: {last_spot["index"]} ')
             try:
@@ -68,7 +68,6 @@ def trade():
                     crypto=last_spot["crypto_name"],
                     direction=last_spot["direction"],
                 )
-                print(status_c)
 
                 if status_c["side"] == "SELL" and status_c["status"] == "NEW":
                     price = get_current_price_crypto(last_spot["crypto_name"])
@@ -85,8 +84,8 @@ def trade():
                         b_or_s="NOT TRADED"
                         )
 
-            except:
-                print(f'Erro ao Fechar o sinal: {last_spot["index"]}')
+            except Exception as e:
+                print(f'Erro ao Fechar o sinal: {last_spot["index"]} - {e}')
                 continue
 
         ###########################################################################
