@@ -135,7 +135,7 @@ def read_csv():
 
 
 
-def insert_csv_status(c_index, b_or_s, order_id, price_buy, stop_price, qtd):
+def insert_csv_status(c_index, b_or_s, order_id=0, price_buy=0, stop_price=0, qtd=0):
     try:
         df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
         ind = df.loc[lambda df: df['index'] == int(c_index)]

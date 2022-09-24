@@ -17,14 +17,27 @@ Copiar o arquivo gerado e jogar no repo do robo
 
 API_ID = 11074177
 API_HASH = '15a39f85549bd32cd83935b3dd04d26c'
-
-
-def get_messages_group():
+def connect():
     try:
         proxy = (socks.SOCKS5, "45.239.152.141", "3001")
-        print('proxy', proxy)
         client = TelegramClient(proxy=proxy, session=f'{DATA_DIRECTORY}/session_name', api_id=API_ID, api_hash=API_HASH)
         client.connect()
+
+        return client
+    except:
+        print("Tentando conectar-se ao Telegram de novo")
+        time.sleep(2)
+        connect()
+
+
+
+
+def get_messages_group(client):
+    try:
+        # proxy = (socks.SOCKS5, "45.239.152.141", "3001")
+        # client = TelegramClient(proxy=proxy, session=f'{DATA_DIRECTORY}/session_name', api_id=API_ID, api_hash=API_HASH)
+        # client.connect()
+
 
         result = client(functions.messages.GetDialogsRequest(
             offset_date=None,
@@ -33,28 +46,21 @@ def get_messages_group():
             limit=500,
             hash=-0,
         ))
-
+        print("Buscando Mensagens")
         title = "Brazza Scalping Vip"
         for chat in result.chats:
             if chat.title == title:
-                while True:
-                    messages = client.get_messages(chat, limit=1)
-                    for message in messages:
-                        last = last_index()
-                        if last != int(message.id):
-                            check_csv = check_its_repeated(message.id)
-                            if check_csv:
-                                res = insert_csv(message.message, message.date, message.id)
-                                if res:
-                                    print(50*'*')
-                                    print(message.id)
-                                    print(message.message)
-                                    #    if message.reply_to:
-                                    #        print("reposta: ", message.reply_to.reply_to_msg_id)
+                messages = client.get_messages(chat, limit=1)
+                for message in messages:
+                    check_csv = check_its_repeated(message.id)
+                    if check_csv:
+                        res = insert_csv(message.message, message.date, message.id)
+                        if res:
+                            print(f"Inserindo Spot no csv, ID: {message.id}")
 
-                        time.sleep(5)
+                    # time.sleep(3)
 
-        
+
     except Exception as e:
         print(f"Error: {e}")
         raise e

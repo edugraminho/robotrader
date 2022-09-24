@@ -92,14 +92,9 @@ def closed_market(index, crypto, direction):
             )
 
         return res
-    except ValueError as e:
+    except:
+        return {"status": "ERROR"}
 
-        raise BinanceAPIException(e.response, e.status_code, e.text)
-        print(e.status_code)
-        print(e.message)
-        print(e.response)
-        print(e.request)
-        print(e.code)
 
 # print(closed_market(1, "ETHUSDT", "LONG"))
 
@@ -147,7 +142,7 @@ def stop_loss_closed():
     cryptos_data = read_csv()
     for c in cryptos_data:
         cur_price = get_current_price_crypto(c["crypto_name"])
-        
+
         if c["status"] == "BUY" and c["direction"] == "LONG":
             if float(cur_price) <= float(c["stop_price"]):
                 print(f'Efetuando StopLoss, crypto: {c["crypto_name"]}')

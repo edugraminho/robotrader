@@ -41,3 +41,14 @@ MIIBCgKCAQEA6LszBcC1LGzyr992NzE0ieY+BSaOW622Aa9Bd4ZHLl+TuFQ4lo4g
 t6N/byY9Nw9p21Og3AoXSL2q/2IJ1WRUhebgAdGVMlV1fkuOQoEzR7EdpqtQD9Cs
 5+bfo3Nhmcyvk5ftB0WkJ9z6bNZ7yxrP8wIDAQAB
 -----END RSA PUBLIC KEY-----
+
+
+
+# Tratamento de erro Binance
+    except ValueError as e:
+        raise BinanceAPIException(e.response, e.status_code, e.text)
+        print(e.status_code)
+        print(e.message)
+        print(e.response)
+        print(e.request)
+        print(e.code)
