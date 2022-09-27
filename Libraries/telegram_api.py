@@ -30,8 +30,6 @@ def connect():
         connect()
 
 
-
-
 def get_messages_group(client):
     try:
 
@@ -45,16 +43,19 @@ def get_messages_group(client):
         title = "Brazza Scalping Vip"
         for chat in result.chats:
             if chat.title == title:
-                messages = client.get_messages(chat, limit=1)
+                messages = client.get_messages(chat, limit=500)
                 for message in messages:
                     check_csv = check_its_repeated(message.id)
                     if check_csv:
-                        res = insert_csv(message.message, message.date, message.id)
-                        if res:
-                            print(f"Novo SPOT, ID: {message.id}")
-
-                    # time.sleep(3)
-
+                        reply_to = check_reply_to(message)
+                        #reply_to[0] = direction   reply_to[1]= reply_to
+                        insert_csv(
+                            message.message, 
+                            message.date, 
+                            message.id, 
+                            reply_to[0], 
+                            reply_to[1]
+                        )              
 
     except Exception as e:
         print(f"Error: {e}")

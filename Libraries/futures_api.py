@@ -1,7 +1,5 @@
 from binance.client import Client
 from binance.enums import *
-from binance.exceptions import BinanceAPIException
-from datetime import datetime
 from Libraries.utils import *
 
 # from binance.cm_futures import CMFutures
@@ -17,18 +15,27 @@ PERCENTAGE_STOP = 3
 client = Client(API_KEY, API_SECRET)
 
 
+def adjuste_round(value):
+    if value < 1:
+        return round(value, 4)
+    if value < 100:
+        return round(value, 2)
+    if value < 500:
+        return round(value, 1)
+    else:
+        return int(value)
+
+
 def get_current_price_crypto(crypto):
-    date_price = client.get_recent_trades(symbol=crypto, limit=1)
-    price = float(date_price[0]["price"])
+    try: 
+        date_price = client.get_recent_trades(symbol=crypto, limit=1)
+        price = float(date_price[0]["price"])
 
-    # descontando uma porcentagem para garantir que a ordem seja fechada
-    # price = get_current_price_crypto(crypto)
-    # #deconto de 1%
-    # value =  price - (price * 0.01)
+        return adjuste_round(price)
 
-
-
-    return price
+    except Exception as e:
+        print(f"get_current_price_crypto. Erro: {e}")
+        return 'ERROR'
 
 
 def create_order_buy_long_or_short(index, crypto, buy_or_sell, direction, quantity):
@@ -81,23 +88,21 @@ def create_order_buy_long_or_short(index, crypto, buy_or_sell, direction, quanti
 
 def closed_market(index, crypto, direction):
     try:
+        #TODO pegar o valor da crypto e fazer a conta de quanto vender
+        if direction != "NOT TRADED":
+            return client.futures_create_order(
+                symbol=crypto,
+                side="SELL",
+                positionSide=direction,
+                dualSidePosition= False,
+                type='MARKET',
+                quantity=999,
+                )
+        else:
+            return {"side":"ERROR","status": "ERROR"}
+    except:
+        return {"side":"ERROR","status": "ERROR"}
 
-        res = client.futures_create_order(
-            symbol=crypto,
-            side="SELL",
-            positionSide=direction,
-            dualSidePosition= False,
-            type='MARKET',
-            quantity=999,
-            )
-
-        return res
-    except Exception as e:
-        # print(f"closed_market. Erro: {e}")
-        pass
-
-
-# print(closed_market(1, "ETHUSDT", "LONG"))
 
 
 def get_balance():
@@ -120,30 +125,34 @@ def find_value_to_aport(crypto):
     price_crypto = get_current_price_crypto(crypto)
     value_available = get_balance()[0]["available_balance"]
 
-    print("price_crypto", price_crypto)
-
     percentage = PERCENTAGE_BUY / 100
 
     _value = ((value_available * 20) * percentage) / price_crypto
 
     if _value < 1:
-        return round(float(_value), 3)
+        return round(_value, 4)
+    if _value < 10:
+        return round(_value, 2)
     else:
         return int(_value)
 
 
+
 def calculate_price_stop_limit(crypto):
     try: 
-        cur_price = get_current_price_crypto(crypto)
-        #deconto de 1%
-        perc = PERCENTAGE_STOP / 100
-        stop_price =  round(float(cur_price - (cur_price * perc)), 2)
         print("Adicionando stop_price: ", crypto)
+        cur_price = get_current_price_crypto(crypto)
 
-        return stop_price
+        #desconto de 3%
+        perc = PERCENTAGE_STOP / 100
+        stop_price = float(cur_price - (cur_price * perc))
+
+        return adjuste_round(stop_price)
+
     except Exception as e:
         print(f"calculate_price_stop_limit. Erro: {e}")
-        pass
+        return 'ERROR'
+
 
 
 def stop_loss_closed():

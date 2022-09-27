@@ -5,7 +5,7 @@ import pandas as pd
 from Variables.config import *
 
 
-def insert_csv(value, date, index):
+def insert_csv(value, date, index, direction_closed, reply_to_index):
     try:
         fieldname = [
             "index",
@@ -14,7 +14,7 @@ def insert_csv(value, date, index):
             "direction",
             "signal_type", 
             "status",
-            "order_id",
+            "reply_to",
             "price_buy",
             "stop_price",
             "qtd"
@@ -42,6 +42,7 @@ def insert_csv(value, date, index):
         if closed_signal != None:
             signal_type = "CLOSED"
             insert = True
+            direction_type = direction_closed
 
         if direction != None:
             direction_type = direction[0].strip().upper()
@@ -60,7 +61,8 @@ def insert_csv(value, date, index):
                     "date": date.strftime("%d-%m-%y %H:%M"),
                     "crypto_name": crypto_name,
                     "direction": direction_type,
-                    "signal_type": signal_type
+                    "signal_type": signal_type,
+                    "reply_to": reply_to_index
                 })
 
                 return True
@@ -92,7 +94,7 @@ def last_spot_dict():
                     "direction": str(reader[3].rstrip()),
                     "signal_type" : str(reader[4].rstrip()), 
                     "status": str(reader[5].rstrip()),
-                    "order_id": str(reader[6].rstrip()),
+                    "reply_to": str(reader[6].rstrip()),
                     "price_buy":reader[7].rstrip(),
                     "stop_price":reader[8].rstrip(),
                     "qtd": str(reader[9].rstrip())
@@ -137,13 +139,15 @@ def read_csv():
 
 
 
-def insert_csv_status(c_index, b_or_s, order_id=0, price_buy=0, stop_price=0, qtd=0):
+def insert_csv_status(c_index, signal_type, status, direction, reply_to=0, price_buy=0, stop_price=0, qtd=0):
     try:
         df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
         ind = df.loc[lambda df: df['index'] == int(c_index)]
         if not ind.empty:
-            df._set_value(ind.index[0],'status',b_or_s)
-            df._set_value(ind.index[0],'order_id',order_id)
+            df._set_value(ind.index[0],'signal_type',signal_type)
+            df._set_value(ind.index[0],'status',status)
+            df._set_value(ind.index[0],'direction',direction)
+            df._set_value(ind.index[0],'reply_to',reply_to)
             df._set_value(ind.index[0],'price_buy',price_buy)
             df._set_value(ind.index[0],'stop_price',stop_price)
             df._set_value(ind.index[0],'qtd',qtd)
@@ -165,7 +169,33 @@ def check_its_repeated(index):
     except:
         return True
             
+def check_reply_to(message):
+    try:
+        if message.reply_to:
+            reply_to = message.reply_to.reply_to_msg_id
+
+            df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
+            direction = df.loc[lambda df: df['index'] == int(reply_to)]['direction'].values[0]
+            if direction:
+                return (direction, reply_to)
             
+        return ("NOT TRADED", 0)
+    except:
+        return ("NOT TRADED", 0)
+                       
+
+def check_all_closed_spots():
+    try:
+        df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
+        _df = df.loc[lambda df: df['direction'] != 'NOT TRADED']
+        closed = _df.loc[lambda df: df['signal_type'] == 'CLOSED']
+            
+        if not closed.empty:
+            return closed
+            
+        return False
+    except:
+        return False
 
 """
 def pay_a_percentage(balance):
