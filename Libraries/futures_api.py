@@ -40,8 +40,6 @@ def get_current_price_crypto(crypto):
 
 def create_order_buy_long_or_short(index, crypto, buy_or_sell, direction, quantity):
 
-    # para encontrar o quantidade, tenho q pegar meu saldo + 20x
-
     res = client.futures_create_order(
         symbol=crypto,
         side=buy_or_sell,
@@ -51,40 +49,9 @@ def create_order_buy_long_or_short(index, crypto, buy_or_sell, direction, quanti
         quantity=quantity
         )
 
-
     return res
 
-    # pegar o retorno e armnazenar o orderId
-    futures_order = {
-        "orderId":74842174826,
-        "symbol":"BTCUSDT",
-        "status":"NEW",
-        "clientOrderId":"pjUADBlrl43eKRQkt1WhBy",
-        "price":"0",
-        "avgPrice":"0.00000",
-        "origQty":"0.010",
-        "executedQty":"0",
-        "cumQty":"0",
-        "cumQuote":"0",
-        "timeInForce":"GTC",
-        "type":"MARKET",
-        "reduceOnly":False,
-        "closePosition":False,
-        "side":"BUY",
-        "positionSide":"LONG",
-        "stopPrice":"0",
-        "workingType":"CONTRACT_PRICE",
-        "priceProtect":False,
-        "origType":"MARKET",
-        "updateTime":1662843258272
-        }
 
-
-# print(create_order_buy_long_or_short(1,'BTCUSDT', 'BUY' ,'LONG', 0.001))
-
-
-
-# print(create_stop_limit('BTCUSDT', 'SELL' ,'LONG', 0.001))
 
 def closed_market(index, crypto, direction):
     try:
