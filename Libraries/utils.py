@@ -5,7 +5,7 @@ import pandas as pd
 from Variables.config import *
 
 
-def insert_csv(value, date, index, direction_closed, reply_to_index):
+def insert_csv(value, date, index, direction_closed, reply_to_index, qtd=0):
     try:
         fieldname = [
             "index",
@@ -55,14 +55,22 @@ def insert_csv(value, date, index, direction_closed, reply_to_index):
             if (os.stat(f"{DATA_DIRECTORY}/market.csv").st_size == 0):
                 writer.writeheader()
 
+            #Verifica a ultima cripto para nao inserir repetido
+            with open(f"{DATA_DIRECTORY}/market.csv", "r") as f:
+                last_crypto_name = f.readlines()[-1].split(",")[2]
+                if last_crypto_name == crypto_name:
+                    insert = False
+
             if insert:
                 writer.writerow({
                     "index": index,
-                    "date": date.strftime("%d-%m-%y %H:%M"),
+                    "date": date.strftime("%d-%m %H:%M"),
                     "crypto_name": crypto_name,
                     "direction": direction_type,
                     "signal_type": signal_type,
-                    "reply_to": reply_to_index
+                    "reply_to": reply_to_index,
+                    "qtd": qtd,
+
                 })
 
                 return True
@@ -129,6 +137,12 @@ def last_line_status():
             f"Falha ao pegar o ultimo status. Detalhes: {e}")
 
 
+def last_crypto_name():
+    with open(f"{DATA_DIRECTORY}/market.csv", "r",encoding="utf-8", newline='') as f:
+        reader = f.readlines()[-1].split(",")
+        return reader[2]
+
+
 def read_csv():
     csv_list = []
     with open(f"{DATA_DIRECTORY}/market.csv", "r",encoding="utf-8", newline='') as f:
@@ -139,7 +153,8 @@ def read_csv():
 
 
 
-def insert_csv_status(c_index, signal_type, status, direction, reply_to=0, price_buy=0, stop_price=0, qtd=0):
+def insert_csv_status(
+    c_index, signal_type, status, direction, reply_to=0, price_buy=0, stop_price=0, qtd=0, error=""):
     try:
         df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
         ind = df.loc[lambda df: df['index'] == int(c_index)]
@@ -151,6 +166,7 @@ def insert_csv_status(c_index, signal_type, status, direction, reply_to=0, price
             df._set_value(ind.index[0],'price_buy',price_buy)
             df._set_value(ind.index[0],'stop_price',stop_price)
             df._set_value(ind.index[0],'qtd',qtd)
+            df._set_value(ind.index[0],'error',error)
 
 
         df.to_csv(f"{DATA_DIRECTORY}/market.csv", index=False)
@@ -160,7 +176,7 @@ def insert_csv_status(c_index, signal_type, status, direction, reply_to=0, price
         pass
 
 
-def check_its_repeated(index):
+def check_index_repeated(index):
     try:
         df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
         ind = df.loc[lambda df: df['index'] == int(index)]
@@ -175,74 +191,44 @@ def check_reply_to(message):
             reply_to = message.reply_to.reply_to_msg_id
 
             df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
-            direction = df.loc[lambda df: df['index'] == int(reply_to)]['direction'].values[0]
+            _df = df.loc[lambda df: df['index'] == int(reply_to)]
+            direction = _df['direction'].values[0]
+            qtd = _df['qtd'].values[0]
             if direction:
-                return (direction, reply_to)
+                return (direction, reply_to, int(qtd))
             
-        return ("NOT TRADED", 0)
+        return ("NOT_TRADED", 0, 0)
     except:
-        return ("NOT TRADED", 0)
+        return ("NOT_TRADED", 0, 0)
                        
 
 def check_all_closed_spots():
     try:
         df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
-        _df = df.loc[lambda df: df['direction'] != 'NOT TRADED']
+        _df = df.loc[lambda df: df['direction'] != 'NOT_TRADED']
         closed = _df.loc[lambda df: df['signal_type'] == 'CLOSED']
             
         if not closed.empty:
-            return closed
+            return (True, closed)
             
-        return False
+        return (False, '')
     except:
-        return False
-
-"""
-def pay_a_percentage(balance):
-    value = int(balance) * (1 - PURCHASE_PERCENTAGE / 100)
-    return PURCHASE_VALUE 
-    #return round(balance - value, 2)
+        return (False, '')
 
 
-def calculate_stop_limit(price):
-    value = int(price * 100) * STOP_LOSS_PERCENTAGE / 100
-    return round(price - (value / 100), 3)
-
-
-def convert_to_int(str_balance):
-    number = round(float(str_balance.split(" ")[0]), 2)
-
-    if number < 0.5:
-        return 0
-    return number
-
-
-def convert_balance_crypto_to_float(str_balance):
-    # para nao arrendondar os numeros decimais. Ex: 0.59999
-    try: 
-        split_str = str_balance.split(" ")[0].split(".")
-        number = split_str[0] + "." + split_str[1][:2]
-
-        return float(number)
-    except Exception as e:
-        print(
-            f"Falha ao converter balanco para float. Detalhes: {e}")
-
-
-def convert_balance_crypto_to_stop(str_balance):
+def check_all_stop_loss():
     try:
-        split_str = str_balance.split(" ")[0].split(".")
-        number = float(split_str[0] + "." + split_str[1][:2])
+        df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
+        _df = df.loc[lambda df: df['status'] == 'BUY']
+        stop_long = _df.loc[lambda df: df['direction'] == 'LONG']
+        stop_short = _df.loc[lambda df: df['direction'] == 'SHORT']
+            
+        if not stop_long.empty:
+            return (True, stop_long)
 
-        if number < 10:
-            return str(number)
-        elif number < 100:
-            return str(number)[:-1]
-        return str(int(number))
-
-    except Exception as e:
-        print(
-            f"Falha ao converter balanco stop. Detalhes: {e}")
-
-
-"""
+        if not stop_short.empty:
+            return (True, stop_short)
+            
+        return (False, "")
+    except:
+        return (False, "")

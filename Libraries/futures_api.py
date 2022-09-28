@@ -53,24 +53,41 @@ def create_order_buy_long_or_short(index, crypto, buy_or_sell, direction, quanti
 
 
 
-def closed_market(index, crypto, direction):
+def closed_market(index, crypto, direction, qtd=999):
     try:
-        #TODO pegar o valor da crypto e fazer a conta de quanto vender
+        price_crypto = get_current_price_crypto(crypto)
+        qtd = 999
+
+        if price_crypto <= 0.9:
+            qtd = 9999
+        if price_crypto <= 0.09:
+            qtd = 99999        
+        if price_crypto <= 0.009:
+            qtd = 999999
+  
+        if price_crypto > 1000:
+            qtd = 9
+
         if direction != "NOT TRADED":
-            return client.futures_create_order(
+            res = client.futures_create_order(
                 symbol=crypto,
                 side="SELL",
                 positionSide=direction,
                 dualSidePosition= False,
                 type='MARKET',
-                quantity=999,
+                quantity=int(qtd),
                 )
+            return res
         else:
-            return {"side":"ERROR","status": "ERROR"}
-    except:
-        return {"side":"ERROR","status": "ERROR"}
+            return {"side":"ERROR","status": "CLOSED_ERROR"}
 
+    except Exception as e:
+        return {"side":"ERROR","status": "CLOSED_ERROR", "error": e}
 
+#APIError(code=-2022): ReduceOnly Order is rejected
+#APIError(code=-4005): Quantity greater than max quantity.
+#{"code":-1102,"msg":"Mandatory parameter \'positionSide\' was not sent, was empty/null, or malformed."}
+#{"code":-4005,"msg":"Quantity greater than max quantity."
 
 def get_balance():
     # para obter a quantidade comprada
@@ -97,7 +114,7 @@ def find_value_to_aport(crypto):
     _value = ((value_available * 20) * percentage) / price_crypto
 
     if _value < 1:
-        return round(_value, 4)
+        return round(_value, 3)
     if _value < 10:
         return round(_value, 2)
     else:
@@ -119,28 +136,3 @@ def calculate_price_stop_limit(crypto):
     except Exception as e:
         print(f"calculate_price_stop_limit. Erro: {e}")
         return 'ERROR'
-
-
-
-def stop_loss_closed():
-
-    cryptos_data = read_csv()
-    for c in cryptos_data:
-        cur_price = get_current_price_crypto(c["crypto_name"])
-
-        if c["status"] == "BUY" and c["direction"] == "LONG":
-            if float(cur_price) <= float(c["stop_price"]):
-                print(f'Efetuando StopLoss, crypto: {c["crypto_name"]}')
-                order = closed_market(c["index"], c["crypto_name"], c["direction"])
-                print(f'STOP LOSS: {c["index"]} - {c["crypto_name"]} - {c["direction"]}')
-                return (True, order)
-
-        if c["status"] == "BUY" and c["direction"] == "SHORT":
-            if float(cur_price) >= float(c["stop_price"]):
-                print(f'Efetuando StopLoss, crypto: {c["crypto_name"]}')
-                order = closed_market(c["index"], c["crypto_name"], c["direction"])
-                print(f'STOP LOSS: {c["index"]} - {c["crypto_name"]} - {c["direction"]}')
-
-                return (True, order)
-
-    return (False, "NOP")

@@ -32,7 +32,6 @@ def connect():
 
 def get_messages_group(client):
     try:
-
         result = client(functions.messages.GetDialogsRequest(
             offset_date=None,
             offset_id=0,
@@ -45,16 +44,17 @@ def get_messages_group(client):
             if chat.title == title:
                 messages = client.get_messages(chat, limit=1)
                 for message in messages:
-                    check_csv = check_its_repeated(message.id)
+                    check_csv = check_index_repeated(message.id)
                     if check_csv:
                         reply_to = check_reply_to(message)
-                        #reply_to[0] = direction   reply_to[1]= reply_to
+
                         insert_csv(
                             message.message, 
                             message.date, 
                             message.id, 
-                            reply_to[0], 
-                            reply_to[1]
+                            reply_to[0], #direction 
+                            reply_to[1], #reply_to index
+                            reply_to[2]  #quantidade
                         )              
 
     except Exception as e:

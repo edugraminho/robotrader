@@ -1,4 +1,3 @@
-from shutil import ExecError
 import time
 from Variables.config import *
 from Libraries.utils import *
@@ -51,109 +50,145 @@ def trade():
                         )
 
         except Exception as e:
-            # closed_market(
-            #     index=last_spot["index"],
-            #     crypto=last_spot["crypto_name"],
-            #     direction=last_spot["direction"],
-            # )
-            
             insert_csv_status(
                 c_index=last_spot["index"],
-                signal_type='ERROR BUY',
+                direction=last_spot["direction"],
+                signal_type='BUY',
                 status='ERROR',
-                direction='ERROR',
+                error=e
             )
-            print(f'Erro ao comprar moeda. Error: {e}')
             pass
         
 
         ########################################################################
         ############################### CLOSED #################################
-
-        if last_spot["signal_type"] == "CLOSED" and \
-            last_spot["status"] == "" :
-            print(50*"=")
-            print(f'Nova ordem de VENDA, id: {last_spot["index"]} ')
+        
+        if last_spot["signal_type"] == "CLOSED" and last_spot["status"] == "" :
+            
             try:
-
                 status_closed = closed_market(
                     index=last_spot["index"],
                     crypto=last_spot["crypto_name"],
                     direction=last_spot["direction"],
+                    qtd=last_spot["qtd"]
                 )
 
                 if status_closed["side"] == "SELL" and status_closed["status"] == "NEW":
                     price = get_current_price_crypto(last_spot["crypto_name"])
                     insert_csv_status(
                         c_index=last_spot["index"],
-                        signal_type=status_closed["status"],
+                        direction=last_spot["direction"],
+                        signal_type=last_spot["signal_type"],
                         status=status_closed["side"],
-                        direction=status_closed["positionSide"],
                         price_buy=price,
-                        qtd=status_closed['origQty']
+                        qtd=last_spot["qtd"]
                         )
-                else:
+
+                    print(50*"=")
+                    print(f'Nova ordem de VENDA, id: {last_spot["index"]} ')
+
+                elif last_spot["status"] == "BUY":
                     insert_csv_status(
                         c_index=last_spot["index"],
-                        signal_type=status_closed["status"],
-                        direction="NOT TRADED",
-                        status="NOT TRADED"
+                        direction="NOT_TRADED",
+                        signal_type=last_spot["signal_type"],
+                        status="NOT_TRADED"
                         )
 
             except Exception as e:
-                print(f'Erro ao Fechar o sinal: {last_spot["index"]} - {e}')
+                insert_csv_status(
+                    c_index=last_spot["index"],
+                    direction=last_spot["direction"],
+                    signal_type=last_spot["signal_type"],
+                    status="ERROR_CLOSED",
+                    error=e
+                    )
                 pass
-
 
 
         ###########################################################################
         ############################### CLOSED ALL #################################
         try:
             check_all = check_all_closed_spots()
+            if check_all[0]:
+                for c in check_all[1].iterrows():
+                    all_closed = closed_market(
+                        index=c[1]['index'],
+                        crypto=c[1]['crypto_name'],
+                        direction=c[1]['direction'],
+                        qtd=c[1]['qtd'],
+                    )
 
-            for c in check_all.iterrows():
-                print(c[1]['index'], c[1]['crypto_name'], c[1]['direction'])
+                    if all_closed["side"] == "SELL" and all_closed["status"] == "NEW":
+                        insert_csv_status(
+                            c_index=c[1]['index'],
+                            direction=c[1]['direction'],
+                            signal_type=c[1]['signal_type'],
+                            status=all_closed["side"],
+                            )
 
-                all_closed = closed_market(
-                    index=c[1]['index'],
-                    crypto=c[1]['crypto_name'],
-                    direction=c[1]['direction'],
-                )
-                if all_closed["side"] == "SELL" and all_closed["status"] == "NEW":
-                    insert_csv_status(
-                        c_index=c[1]['index'],
-                        signal_type=all_closed["status"],
-                        status=all_closed["side"],
-                        direction=all_closed["positionSide"],
-                        )
-                else:
-                    insert_csv_status(
-                        c_index=c[1]['index'],
-                        signal_type=all_closed["status"],
-                        direction="NOT TRADED",
-                        status="NOT TRADED"
-                        )
-        except:
-            continue
+        except Exception as e:
+            print(f"Erro Closed All: {e}")
+            pass
 
-
+        
         ###########################################################################
         ############################### STOP LOSS #################################
         try:
-            if last_spot["status"] == "BUY":
-                status_s = stop_loss_closed()
-                if status_s[0]:
-                    price = get_current_price_crypto(last_spot["crypto_name"])
-                    insert_csv_status(
-                        c_index=last_spot["index"],
-                        signal_type=status_s[1]["status"],
-                        status=status_s[1]["side"], 
-                        direction=status_s[1]["positionSide"],
-                        price_buy=price,
-                        qtd=status_s[1]['origQty']
-                    )
-        except:
-            print(f'Erro no Stop Loss: {last_spot["index"]}')
+            check_stop = check_all_stop_loss()
+
+            if check_stop[0]: 
+                for s in check_stop[1].iterrows():
+                    cur_price = float(get_current_price_crypto(s[1]['crypto_name']))
+                    #print(s[1]['index'], s[1]['crypto_name'], s[1]['direction'], float(cur_price), "stop", float(s[1]['stop_price']), s[1]['qtd'])
+
+                    index = s[1]['index']
+                    crypto_name = s[1]['crypto_name']
+                    direction = s[1]['direction']
+                    signal_type = s[1]['signal_type']
+                    status = s[1]['status']
+                    price_buy = s[1]['price_buy']
+                    stop_price = float(s[1]['stop_price'])
+                    qtd = s[1]['qtd']
+
+
+                    if status == "BUY" and direction == "LONG":
+                        if cur_price <= stop_price:
+                            closed_res = closed_market(
+                                index=index,
+                                crypto=crypto_name,
+                                direction=direction,
+                                qtd=qtd,
+                            )
+                            if closed_res["side"] == "SELL" and closed_res["status"] == "NEW":
+                                insert_csv_status(
+                                    c_index=index,
+                                    direction=direction,
+                                    signal_type=signal_type,
+                                    status="STOP_LOSS",
+                                    price_buy=price_buy,
+                                    stop_price=stop_price,
+                                    )
+
+
+                    if status == "BUY" and direction == "SHORT":
+                        if cur_price >= stop_price:
+                            closed_res = closed_market(
+                                index=index,
+                                crypto=crypto_name,
+                                direction=direction,
+                                qtd=qtd,
+                            )
+
+                            if closed_res["side"] == "SELL" and closed_res["status"] == "NEW":
+                                insert_csv_status(
+                                    c_index=index,
+                                    direction=direction,
+                                    signal_type=signal_type,
+                                    status="STOP_LOSS",
+                                    )
+        except Exception as e:
+            print("Erro STOP All", e)
             pass
 
 
