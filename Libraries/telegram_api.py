@@ -47,7 +47,9 @@ def get_messages_group(client):
                     check_csv = check_index_repeated(message.id)
                     if check_csv:
                         reply_to = check_reply_to(message)
-
+                        print(f"***************{message.id}*******************")
+                        print(message.message)
+                        print("****************************************")
                         insert_csv(
                             message.message, 
                             message.date, 

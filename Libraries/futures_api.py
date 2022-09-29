@@ -10,6 +10,8 @@ API_SECRET = "X4TE8ehw2891qrLgT4iQSoFn6kwnQXy1V6ispA34cdWf0kq9PXP9Xa1d1EW880Nt"
 
 PERCENTAGE_BUY = 5
 
+QNT_CRYPTOS_TO_PURCHASE = 45
+
 PERCENTAGE_STOP = 3
 
 client = Client(API_KEY, API_SECRET)
@@ -106,12 +108,19 @@ def get_balance():
 
 
 def find_value_to_aport(crypto):
+    '''
+    PORCENTAGEM DO TOTAL
     price_crypto = get_current_price_crypto(crypto)
     value_available = get_balance()[0]["available_balance"]
 
     percentage = PERCENTAGE_BUY / 100
 
     _value = ((value_available * 20) * percentage) / price_crypto
+    '''
+    price_crypto = get_current_price_crypto(crypto)
+    total_balance = get_balance()[0]["total_balance"]
+
+    _value = ((total_balance * 20) / QNT_CRYPTOS_TO_PURCHASE) / price_crypto
 
     if _value < 1:
         return round(_value, 3)
@@ -124,7 +133,6 @@ def find_value_to_aport(crypto):
 
 def calculate_price_stop_limit(crypto):
     try: 
-        print("Adicionando stop_price: ", crypto)
         cur_price = get_current_price_crypto(crypto)
 
         #desconto de 3%

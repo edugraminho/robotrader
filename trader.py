@@ -11,7 +11,7 @@ def trade():
     client = connect()
 
     while True:
-        time.sleep(3)
+        time.sleep(1)
 
         get_messages_group(client)
 
@@ -85,7 +85,7 @@ def trade():
                         )
 
                     print(50*"=")
-                    print(f'Nova ordem de VENDA, id: {last_spot["index"]} ')
+                    print(f'Nova ordem de VENDA, id: {last_spot["index"]} - {last_spot["crypto_name"]}')
 
                 elif last_spot["status"] == "BUY":
                     insert_csv_status(
@@ -131,7 +131,6 @@ def trade():
             print(f"Erro Closed All: {e}")
             pass
 
-        
         ###########################################################################
         ############################### STOP LOSS #################################
         try:
@@ -190,6 +189,15 @@ def trade():
         except Exception as e:
             print("Erro STOP All", e)
             pass
+        
+        #CASO DUPLIQUE O CODIGO, PARA EVITAR COMPRA REPETIDA
+        if last_spot["signal_type"] == "NEW" and last_spot["status"] == "":
+            insert_csv_status(
+                c_index=last_spot["index"],
+                direction=last_spot["direction"],
+                signal_type=last_spot["signal_type"],
+                status="DUPLICATE"
+                )
 
 
 loop = asyncio.get_event_loop()
