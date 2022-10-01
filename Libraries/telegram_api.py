@@ -2,30 +2,31 @@ from telethon.sync import TelegramClient
 from telethon import functions, events, types
 from Variables.config import *
 from Libraries.utils import *
+from Libraries.logger import get_logger
 
 import time
 import socks
+
 """
 Para conseguir logar na sessao tem q entrar em https://my.telegram.org.
 Pegar o ID e HASH 
 Copiar o arquivo gerado e jogar no repo do robo
 
-
 45.91.10.76:30001
 
 """
+logger = get_logger(__name__)
 
-API_ID = 11074177
-API_HASH = '15a39f85549bd32cd83935b3dd04d26c'
 def connect():
+    logger.info("Iniciando conexao Telegram")
     try:
         proxy = (socks.SOCKS5, "45.239.152.141", "3001")
         client = TelegramClient(proxy=proxy, session=f'{DATA_DIRECTORY}/session_name', api_id=API_ID, api_hash=API_HASH)
         client.connect()
 
         return client
-    except:
-        print("Tentando conectar-se ao Telegram de novo")
+    except Exception as e:
+        logger.error(f"Erro ao conectar Telegram: {e}")
         time.sleep(2)
         connect()
 
@@ -42,23 +43,16 @@ def get_messages_group(client):
         title = "Brazza Scalping Vip"
         for chat in result.chats:
             if chat.title == title:
-                messages = client.get_messages(chat, limit=1)
+                messages = client.get_messages(chat, limit=5)
                 for message in messages:
                     check_csv = check_index_repeated(message.id)
                     if check_csv:
-                        reply_to = check_reply_to(message)
-                        print(f"***************{message.id}*******************")
-                        print(message.message)
-                        print("****************************************")
-                        insert_csv(
-                            message.message, 
-                            message.date, 
-                            message.id, 
-                            reply_to[0], #direction 
-                            reply_to[1], #reply_to index
-                            reply_to[2]  #quantidade
-                        )              
+                        # reply_to = check_reply_to(message)
+                        # print(f"***************{message.id}*******************")
+                        # print(message.message)
+                        # print("***************************************")
+                        insert_csv(message.message, message.id)
 
     except Exception as e:
-        print(f"Error get_messages_group: {e}")
+        logger.error(f"Error get_messages_group: {e}")
         pass

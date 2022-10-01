@@ -1,20 +1,13 @@
 from binance.client import Client
 from binance.enums import *
 from Libraries.utils import *
+from Libraries.logger import get_logger
+from Variables.config import * 
 
-# from binance.cm_futures import CMFutures
-# futures_client = CMFutures(API_KEY, API_SECRET)
-
-API_KEY = "L8vTV38sqckhCZCT403TlRqxZHSGuASm95QckB9y5Hmg6g1OUddff79Y1k9DGGLb"
-API_SECRET = "X4TE8ehw2891qrLgT4iQSoFn6kwnQXy1V6ispA34cdWf0kq9PXP9Xa1d1EW880Nt"
-
-PERCENTAGE_BUY = 5
-
-QNT_CRYPTOS_TO_PURCHASE = 45
-
-PERCENTAGE_STOP = 3
 
 client = Client(API_KEY, API_SECRET)
+
+logger = get_logger(__name__)
 
 
 def adjuste_round(value):
@@ -36,22 +29,24 @@ def get_current_price_crypto(crypto):
         return adjuste_round(price)
 
     except Exception as e:
-        print(f"get_current_price_crypto. Erro: {e}")
+        logger.error(f"get_current_price_crypto. Erro: {e}")
         return 'ERROR'
 
 
-def create_order_buy_long_or_short(index, crypto, buy_or_sell, direction, quantity):
+def create_order_buy_long_or_short(crypto, buy_or_sell, direction, quantity):
+    try:
+        res = client.futures_create_order(
+            symbol=crypto,
+            side=buy_or_sell,
+            positionSide=direction,
+            dualSidePosition= False,
+            type='MARKET',
+            quantity=quantity
+            )
 
-    res = client.futures_create_order(
-        symbol=crypto,
-        side=buy_or_sell,
-        positionSide=direction,
-        dualSidePosition= False,
-        type='MARKET',
-        quantity=quantity
-        )
-
-    return res
+        return res
+    except Exception as e:
+        logger.error(f'Erro create_order_buy_long_or_short: {e}')
 
 
 
@@ -70,26 +65,31 @@ def closed_market(index, crypto, direction, qtd=999):
         if price_crypto > 1000:
             qtd = 9
 
-        if direction != "NOT TRADED":
+        buy_or_sell = "SELL"       
+        if direction == "SHORT":
+            buy_or_sell = "BUY"
+
+        # excluir linha com NOT_TRADe
+        if direction != "NOT_TRADED":
             res = client.futures_create_order(
                 symbol=crypto,
-                side="SELL",
+                side=buy_or_sell,
                 positionSide=direction,
                 dualSidePosition= False,
                 type='MARKET',
                 quantity=int(qtd),
                 )
+
             return res
         else:
-            return {"side":"ERROR","status": "CLOSED_ERROR"}
+            logger.error(f'Erro closed_market: {index} - {crypto}')
+            return {"side":"ERROR","status": "CLOSE_ERROR"}
 
     except Exception as e:
-        return {"side":"ERROR","status": "CLOSED_ERROR", "error": e}
+        logger.error(f'Erro closed_market: {e}')
+        return {"side":"ERROR","status": "CLOSE_ERROR", "error": e}
 
-#APIError(code=-2022): ReduceOnly Order is rejected
-#APIError(code=-4005): Quantity greater than max quantity.
-#{"code":-1102,"msg":"Mandatory parameter \'positionSide\' was not sent, was empty/null, or malformed."}
-#{"code":-4005,"msg":"Quantity greater than max quantity."
+
 
 def get_balance():
     # para obter a quantidade comprada
@@ -108,26 +108,29 @@ def get_balance():
 
 
 def find_value_to_aport(crypto):
-    '''
-    PORCENTAGEM DO TOTAL
-    price_crypto = get_current_price_crypto(crypto)
-    value_available = get_balance()[0]["available_balance"]
+    try:
+        '''
+        PORCENTAGEM DO TOTAL
+        price_crypto = get_current_price_crypto(crypto)
+        value_available = get_balance()[0]["available_balance"]
 
-    percentage = PERCENTAGE_BUY / 100
+        percentage = PERCENTAGE_BUY / 100
 
-    _value = ((value_available * 20) * percentage) / price_crypto
-    '''
-    price_crypto = get_current_price_crypto(crypto)
-    total_balance = get_balance()[0]["total_balance"]
+        _value = ((value_available * 20) * percentage) / price_crypto
+        '''
+        price_crypto = get_current_price_crypto(crypto)
+        total_balance = get_balance()[0]["total_balance"]
 
-    _value = ((total_balance * 20) / QNT_CRYPTOS_TO_PURCHASE) / price_crypto
+        _value = ((total_balance * 20) / QNT_CRYPTOS_TO_PURCHASE) / price_crypto
 
-    if _value < 1:
-        return round(_value, 3)
-    if _value < 10:
-        return round(_value, 2)
-    else:
-        return int(_value)
+        if _value < 1:
+            return round(_value, 3)
+        if _value < 10:
+            return round(_value, 2)
+        else:
+            return int(_value)
+    except Exception as e:
+        logger.error(f"find_value_to_aport. Erro: {e}")
 
 
 
@@ -142,5 +145,62 @@ def calculate_price_stop_limit(crypto):
         return adjuste_round(stop_price)
 
     except Exception as e:
-        print(f"calculate_price_stop_limit. Erro: {e}")
+        logger.error(f"calculate_price_stop_limit. Erro: {e}")
         return 'ERROR'
+
+
+def get_all_open_positions():
+    try:
+        all_open_positions_list = []
+
+        all_open_positions = client.futures_position_information()
+        for positions in all_open_positions:
+            amount = positions["positionAmt"]
+            unrealized = float(positions['unRealizedProfit'])
+            if amount != "0" and unrealized != 0.00000000:
+                all_open_positions_list.append(positions)
+
+
+        return all_open_positions_list
+
+    except Exception as e:
+        logger.error(f"get_all_open_positions. Erro: {e}")
+
+
+
+    {
+        "symbol":"AVAXUSDT",
+        "positionAmt":"16",
+        "entryPrice":"17.03",
+        "markPrice":"17.31106440",
+        "unRealizedProfit":"4.49703040",
+        "liquidationPrice":"0",
+        "leverage":"20",
+        "maxNotionalValue":"250000",
+        "marginType":"cross",
+        "isolatedMargin":"0.00000000",
+        "isAutoAddMargin":"false",
+        "positionSide":"LONG",
+        "notional":"276.97703040",
+        "isolatedWallet":"0",
+        "updateTime":1664468887542
+    }
+
+    #SHORT
+    {
+        "symbol":"BTCUSDT",
+        "positionAmt":"-0.005",
+        "entryPrice":"19570.2",
+        "markPrice":"19567.00422088",
+        "unRealizedProfit":"0.01597889",
+        "liquidationPrice":"154359.23249602",
+        "leverage":"20",
+        "maxNotionalValue":"10000000",
+        "marginType":"cross",
+        "isolatedMargin":"0.00000000",
+        "isAutoAddMargin":"false",
+        "positionSide":"SHORT",
+        "notional":"-97.83502110",
+        "isolatedWallet":"0",
+        "updateTime":1664495026797
+    }

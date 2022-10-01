@@ -1,11 +1,14 @@
 import os
 import csv
 import re
+import time 
 import pandas as pd
 from Variables.config import *
+from Libraries.logger import get_logger
 
+logger = get_logger(__name__)
 
-def insert_csv(value, date, index, direction_closed, reply_to_index, qtd=0):
+def insert_csv(value, index):
     try:
         fieldname = [
             "index",
@@ -14,7 +17,6 @@ def insert_csv(value, date, index, direction_closed, reply_to_index, qtd=0):
             "direction",
             "signal_type", 
             "status",
-            "reply_to",
             "price_buy",
             "stop_price",
             "qtd"
@@ -26,6 +28,8 @@ def insert_csv(value, date, index, direction_closed, reply_to_index, qtd=0):
         direction = re.search('LONG|SHORT', value)
 
         closed_signal = re.search('Closed|All entry|All take-profit', value)
+
+        all_take_profit = re.search('All take-profit', value)
 
         crypto_name = None
         direction_type = None
@@ -40,9 +44,14 @@ def insert_csv(value, date, index, direction_closed, reply_to_index, qtd=0):
             crypto_name = closed_crypto[0].strip().replace("/", "").upper()
         
         if closed_signal != None:
-            signal_type = "CLOSED"
+            signal_type = "CLOSE"
             insert = True
-            direction_type = direction_closed
+            direction_type = "OPEN_ORDER"
+
+        if all_take_profit != None:
+            signal_type = "ALL_TAKE_PROFIT"
+            insert = True
+            direction_type = "OPEN_ORDER"
 
         if direction != None:
             direction_type = direction[0].strip().upper()
@@ -57,39 +66,28 @@ def insert_csv(value, date, index, direction_closed, reply_to_index, qtd=0):
 
             #Verifica a ultima cripto para nao inserir repetido
             with open(f"{DATA_DIRECTORY}/market.csv", "r") as f:
-                last_crypto_name = f.readlines()[-1].split(",")[2]
-                if last_crypto_name == crypto_name:
+                last_crypto = f.readlines()[-1].split(",")
+                last_crypto_name = last_crypto[2]
+                last_signal_type = last_crypto[4]
+                if last_crypto_name == crypto_name and last_signal_type == signal_type:
                     insert = False
 
             if insert:
                 writer.writerow({
                     "index": index,
-                    "date": date.strftime("%d-%m %H:%M"),
+                    "date": str(NOW),
                     "crypto_name": crypto_name,
                     "direction": direction_type,
-                    "signal_type": signal_type,
-                    "reply_to": reply_to_index,
-                    "qtd": qtd,
-
+                    "signal_type": signal_type
                 })
 
                 return True
             return False
                 
     except Exception as e:
-        print(f"Falha ao inserir CSV. Detalhes: {e}")
+        logger.error(f"Falha ao inserir CSV. Detalhes: {e}")
         pass
 
-
-def last_line_index_signal():
-    # retorna o ultimo index do sinal + 1
-    try:
-        with open(f"{DATA_DIRECTORY}/market.csv", "r",encoding="utf-8", newline='') as f:
-            reader = f.readlines()[-1].split(",")
-            return int(reader[1]) + 1
-    except Exception as e:
-        print(f'Error last_line_index_signal: {e}')
-        pass
 
 def last_spot_dict():
     try:
@@ -102,48 +100,18 @@ def last_spot_dict():
                     "direction": str(reader[3].rstrip()),
                     "signal_type" : str(reader[4].rstrip()), 
                     "status": str(reader[5].rstrip()),
-                    "reply_to": str(reader[6].rstrip()),
-                    "price_buy":reader[7].rstrip(),
-                    "stop_price":reader[8].rstrip(),
-                    "qtd": str(reader[9].rstrip())
+                    "price_buy":reader[6].rstrip(),
+                    "stop_price":reader[7].rstrip(),
+                    "qtd": str(reader[8].rstrip())
                     }
             return spot
     except Exception as e:
-        print(
+        logger.error(
             f"Falha ao retornar o ultimo dicionario de SPOTs. Detalhes: {e}")
         pass
 
 
-def last_index():
-    # retorna o ultimo index + 1
-    try:
-        with open(f"{DATA_DIRECTORY}/market.csv", "r",encoding="utf-8", newline='') as f:
-            reader = f.readlines()[-1].split(",")
-            return int(reader[0])
-
-    except Exception as e:
-        return ''
-
-
-
-def last_line_status():
-    # retorna a ultima crytpo
-    try:
-        with open(f"{DATA_DIRECTORY}/market.csv", "r",encoding="utf-8", newline='') as f:
-            reader = f.readlines()[-1].split(",")
-            return str(reader[6].strip())
-    except Exception as e:
-        print(
-            f"Falha ao pegar o ultimo status. Detalhes: {e}")
-
-
-def last_crypto_name():
-    with open(f"{DATA_DIRECTORY}/market.csv", "r",encoding="utf-8", newline='') as f:
-        reader = f.readlines()[-1].split(",")
-        return reader[2]
-
-
-def read_csv():
+def csv_to_list():
     csv_list = []
     with open(f"{DATA_DIRECTORY}/market.csv", "r",encoding="utf-8", newline='') as f:
         reader = csv.DictReader(f)
@@ -154,25 +122,24 @@ def read_csv():
 
 
 def insert_csv_status(
-    c_index, signal_type, status, direction, reply_to=0, price_buy=0, stop_price=0, qtd=0, error=""):
+    c_index, signal_type, status, direction, price_buy=0, stop_price=0, qtd=0):
     try:
         df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
         ind = df.loc[lambda df: df['index'] == int(c_index)]
         if not ind.empty:
-            df._set_value(ind.index[0],'signal_type',signal_type)
-            df._set_value(ind.index[0],'status',status)
-            df._set_value(ind.index[0],'direction',direction)
-            df._set_value(ind.index[0],'reply_to',reply_to)
-            df._set_value(ind.index[0],'price_buy',price_buy)
-            df._set_value(ind.index[0],'stop_price',stop_price)
-            df._set_value(ind.index[0],'qtd',qtd)
-            df._set_value(ind.index[0],'error',error)
+            df._set_value(ind.index[0],'signal_type', signal_type)
+            df._set_value(ind.index[0],'status', status)
+            df._set_value(ind.index[0],'direction', direction)
+            # df._set_value(ind.index[0],'reply_to',reply_to)
+            df._set_value(ind.index[0],'price_buy', price_buy)
+            df._set_value(ind.index[0],'stop_price', stop_price)
+            df._set_value(ind.index[0],'qtd', qtd)
 
 
         df.to_csv(f"{DATA_DIRECTORY}/market.csv", index=False)
 
     except Exception as e:
-        print(f"Falha na inserção do status. Erro: {e}")
+        logger.error(f"Falha na inserção do status. Erro: {e}")
         pass
 
 
@@ -185,28 +152,33 @@ def check_index_repeated(index):
     except:
         return True
             
+
 def check_reply_to(message):
+
     try:
         if message.reply_to:
             reply_to = message.reply_to.reply_to_msg_id
-
             df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
             _df = df.loc[lambda df: df['index'] == int(reply_to)]
             direction = _df['direction'].values[0]
             qtd = _df['qtd'].values[0]
+            
             if direction:
                 return (direction, reply_to, int(qtd))
-            
-        return ("NOT_TRADED", 0, 0)
-    except:
-        return ("NOT_TRADED", 0, 0)
+
+        return ("", 0, 0)
+    except Exception as e:
+        print(e)
+        return ("", 0, 0)
                        
 
-def check_all_closed_spots():
+def check_all_spots_closed():
     try:
         df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
-        _df = df.loc[lambda df: df['direction'] != 'NOT_TRADED']
-        closed = _df.loc[lambda df: df['signal_type'] == 'CLOSED']
+
+        closed = df.loc[lambda df: 
+            ((df["signal_type"] == "CLOSE") | (df["signal_type"] == "ALL_TAKE_PROFIT")) 
+            & (df.direction != "NOT_TRADED")]
             
         if not closed.empty:
             return (True, closed)
@@ -231,4 +203,34 @@ def check_all_stop_loss():
             
         return (False, "")
     except:
+        return (False, "")
+
+
+
+def check_position_closing(all_positions):
+    try:
+        df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
+
+        for positions in all_positions:
+            close = df.loc[
+                lambda df: ((df['signal_type'] == 'CLOSE') | (df['signal_type'] == 'ALL_TAKE_PROFIT'))
+                            & (df['direction'] == 'OPEN_ORDER') 
+                            & (df['crypto_name'] == positions["symbol"])]
+
+            # close = df.loc[
+            #     lambda df: (df['crypto_name'] == positions["symbol"]) 
+            #         & (df['direction'] == 'OPEN_ORDER') 
+            #         & (df['status'] != 'SELL')]
+
+            if not close.empty:
+                # adiciona a direcao do spot na coluna
+                df._set_value(close.index[0],'direction', positions["positionSide"])
+                df.to_csv(f"{DATA_DIRECTORY}/market.csv", index=False)
+
+                return (True, close, positions["positionSide"])
+
+        return (False, "", "")
+
+    except Exception as e:
+        logger.error("check_position_closing", e) 
         return (False, "")

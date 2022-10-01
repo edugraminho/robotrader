@@ -44,6 +44,7 @@ t6N/byY9Nw9p21Og3AoXSL2q/2IJ1WRUhebgAdGVMlV1fkuOQoEzR7EdpqtQD9Cs
 
 
 
+
 # Tratamento de erro Binance
     except ValueError as e:
         raise BinanceAPIException(e.response, e.status_code, e.text)
@@ -52,6 +53,12 @@ t6N/byY9Nw9p21Og3AoXSL2q/2IJ1WRUhebgAdGVMlV1fkuOQoEzR7EdpqtQD9Cs
         print(e.response)
         print(e.request)
         print(e.code)
+
+    #APIError(code=-2022): ReduceOnly Order is rejected
+    #APIError(code=-4005): Quantity greater than max quantity.
+    #{"code":-1102,"msg":"Mandatory parameter \'positionSide\' was not sent, was empty/null, or malformed."}
+    #{"code":-4005,"msg":"Quantity greater than max quantity."
+
 
 
 
