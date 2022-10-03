@@ -8,7 +8,7 @@ from Libraries.logger import get_logger
 
 logger = get_logger(__name__)
 
-def insert_csv(value, index):
+def insert_csv(value, date, index):
     try:
         fieldname = [
             "index",
@@ -75,7 +75,7 @@ def insert_csv(value, index):
             if insert:
                 writer.writerow({
                     "index": index,
-                    "date": str(NOW),
+                    "date": str(date),
                     "crypto_name": crypto_name,
                     "direction": direction_type,
                     "signal_type": signal_type

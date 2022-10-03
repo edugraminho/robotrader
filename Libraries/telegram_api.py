@@ -43,7 +43,7 @@ def get_messages_group(client):
         title = "Brazza Scalping Vip"
         for chat in result.chats:
             if chat.title == title:
-                messages = client.get_messages(chat, limit=5)
+                messages = client.get_messages(chat, limit=3)
                 for message in messages:
                     check_csv = check_index_repeated(message.id)
                     if check_csv:
@@ -51,7 +51,7 @@ def get_messages_group(client):
                         # print(f"***************{message.id}*******************")
                         # print(message.message)
                         # print("***************************************")
-                        insert_csv(message.message, message.id)
+                        insert_csv(message.message, message.date, message.id)
 
     except Exception as e:
         logger.error(f"Error get_messages_group: {e}")

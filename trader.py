@@ -168,7 +168,21 @@ def trade():
         if last_spot["signal_type"] == "NEW" and last_spot["status"] == "":
             logger.info(f'VERIFICAR COMPRA DUPLICADA!!! {last_spot["index"]} - {last_spot["crypto_name"]}')
 
-        print("TEMPO TOTAL DE EXEC: ", round(time.time() - start, 3))
+        # print("TEMPO TOTAL DE EXEC: ", round(time.time() - start, 3))
 
 
 asyncio.run(trade())
+
+
+"""
+> Usar a funcao get_all_open_positions para verificar se ja existem posicoes abertas
+para evitar comprar 2X
+
+> Usar a funcao get_all_open_positions para pegar a quantia aportada da moeda,
+e fazer a conta de quanto vender, para nao dar erro
+
+
+
+
+
+"""
