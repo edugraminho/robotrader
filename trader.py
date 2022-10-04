@@ -21,7 +21,17 @@ def trade():
         ###########################################################################
         ################################## BUY ####################################
         try:
-            
+            all_open_positions = get_all_open_positions()
+            for positions in all_open_positions:
+                if last_spot["crypto_name"] == positions["symbol"]:
+                    pass
+                    # insert_csv_status(
+                    #     c_index=last_spot["index"],
+                    #     direction=last_spot["direction"],
+                    #     signal_type=last_spot["signal_type"],
+                    #     status="DUPLICATE"
+                    #     )
+
             if last_spot["signal_type"] == "NEW" and last_spot["status"] == "":
                 crypto_name = last_spot["crypto_name"]
 
@@ -176,13 +186,31 @@ asyncio.run(trade())
 
 """
 > Usar a funcao get_all_open_positions para verificar se ja existem posicoes abertas
-para evitar comprar 2X
+para evitar comprar 2X. 
+Se symbol == crypto_name and .....
 
-> Usar a funcao get_all_open_positions para pegar a quantia aportada da moeda,
-e fazer a conta de quanto vender, para nao dar erro
+> Close market, a data tem q ser maior que a compra. (se nao tem vendas q nao foram fechadas e irá vender)
 
+> Adicionar o ajuste de LEVERAGE (CROSS): client.futures_change_leverage(leverage=20)
 
+> Adicionar o Cancelled no regex de CLOSE market
 
+> STOP LOSS
+        client.futures_create_order(
+            symbol=crypto,
+            side='SELL'
+            type='STOP_MARKET',
+            stopPrice='0.40',
+            closePosition=True
+            )
 
+> TAKE_PROFIT
+        client.futures_create_order(
+            symbol=crypto,
+            side='SELL'
+            type='TAKE_PROFIT_MARKET',
+            stopPrice='0.49',
+            closePosition=True
+            )
 
 """

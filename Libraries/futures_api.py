@@ -1,4 +1,5 @@
 from binance.client import Client
+import math
 from binance.enums import *
 from Libraries.utils import *
 from Libraries.logger import get_logger
@@ -49,38 +50,29 @@ def create_order_buy_long_or_short(crypto, buy_or_sell, direction, quantity):
         logger.error(f'Erro create_order_buy_long_or_short: {e}')
 
 
-
-def closed_market(index, crypto, direction, qtd=999):
+def closed_market(index, crypto, direction, qtd):
     try:
-        price_crypto = get_current_price_crypto(crypto)
-        qtd = 999
+        all_positions = get_all_open_positions()
 
-        if price_crypto <= 0.9:
-            qtd = 9999
-        if price_crypto <= 0.09:
-            qtd = 99999        
-        if price_crypto <= 0.009:
-            qtd = 999999
-  
-        if price_crypto > 1000:
-            qtd = 9
+        for position in all_positions:
+            if position["symbol"] == crypto:
+                current_amount = int(math.ceil(abs(float(position["positionAmt"])))*1.2)
 
-        buy_or_sell = "SELL"       
-        if direction == "SHORT":
-            buy_or_sell = "BUY"
+                buy_or_sell = "SELL"
 
-        # excluir linha com NOT_TRADe
-        if direction != "NOT_TRADED":
-            res = client.futures_create_order(
-                symbol=crypto,
-                side=buy_or_sell,
-                positionSide=direction,
-                dualSidePosition= False,
-                type='MARKET',
-                quantity=int(qtd),
-                )
+                if direction == "SHORT":
+                    buy_or_sell = "BUY"
 
-            return res
+                res = client.futures_create_order(
+                    symbol=crypto,
+                    side=buy_or_sell,
+                    positionSide=direction,
+                    dualSidePosition= False,
+                    type='MARKET',
+                    quantity=current_amount,
+                    )
+
+                return res
         else:
             logger.error(f'Erro closed_market: {index} - {crypto}')
             return {"side":"ERROR","status": "CLOSE_ERROR"}
@@ -109,19 +101,11 @@ def get_balance():
 
 def find_value_to_aport(crypto):
     try:
-        '''
-        PORCENTAGEM DO TOTAL
-        price_crypto = get_current_price_crypto(crypto)
-        value_available = get_balance()[0]["available_balance"]
 
-        percentage = PERCENTAGE_BUY / 100
-
-        _value = ((value_available * 20) * percentage) / price_crypto
-        '''
         price_crypto = get_current_price_crypto(crypto)
         total_balance = get_balance()[0]["total_balance"]
 
-        _value = ((total_balance * 20) / QNT_CRYPTOS_TO_PURCHASE) / price_crypto
+        _value = ((total_balance * LEVERAGE) / QNT_CRYPTOS_TO_PURCHASE) / price_crypto
 
         if _value < 1:
             return round(_value, 3)
@@ -165,42 +149,3 @@ def get_all_open_positions():
 
     except Exception as e:
         logger.error(f"get_all_open_positions. Erro: {e}")
-
-
-
-    {
-        "symbol":"AVAXUSDT",
-        "positionAmt":"16",
-        "entryPrice":"17.03",
-        "markPrice":"17.31106440",
-        "unRealizedProfit":"4.49703040",
-        "liquidationPrice":"0",
-        "leverage":"20",
-        "maxNotionalValue":"250000",
-        "marginType":"cross",
-        "isolatedMargin":"0.00000000",
-        "isAutoAddMargin":"false",
-        "positionSide":"LONG",
-        "notional":"276.97703040",
-        "isolatedWallet":"0",
-        "updateTime":1664468887542
-    }
-
-    #SHORT
-    {
-        "symbol":"BTCUSDT",
-        "positionAmt":"-0.005",
-        "entryPrice":"19570.2",
-        "markPrice":"19567.00422088",
-        "unRealizedProfit":"0.01597889",
-        "liquidationPrice":"154359.23249602",
-        "leverage":"20",
-        "maxNotionalValue":"10000000",
-        "marginType":"cross",
-        "isolatedMargin":"0.00000000",
-        "isAutoAddMargin":"false",
-        "positionSide":"SHORT",
-        "notional":"-97.83502110",
-        "isolatedWallet":"0",
-        "updateTime":1664495026797
-    }

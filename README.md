@@ -87,3 +87,46 @@ t6N/byY9Nw9p21Og3AoXSL2q/2IJ1WRUhebgAdGVMlV1fkuOQoEzR7EdpqtQD9Cs
         "origType":"MARKET",
         "updateTime":1662843258272
         }
+
+
+
+
+GET ALL POSITIONS
+
+
+    {
+        "symbol":"AVAXUSDT",
+        "positionAmt":"16",
+        "entryPrice":"17.03",
+        "markPrice":"17.31106440",
+        "unRealizedProfit":"4.49703040",
+        "liquidationPrice":"0",
+        "leverage":"20",
+        "maxNotionalValue":"250000",
+        "marginType":"cross",
+        "isolatedMargin":"0.00000000",
+        "isAutoAddMargin":"false",
+        "positionSide":"LONG",
+        "notional":"276.97703040",
+        "isolatedWallet":"0",
+        "updateTime":1664468887542
+    }
+
+    #SHORT
+    {
+        "symbol":"BTCUSDT",
+        "positionAmt":"-0.005",
+        "entryPrice":"19570.2",
+        "markPrice":"19567.00422088",
+        "unRealizedProfit":"0.01597889",
+        "liquidationPrice":"154359.23249602",
+        "leverage":"20",
+        "maxNotionalValue":"10000000",
+        "marginType":"cross",
+        "isolatedMargin":"0.00000000",
+        "isAutoAddMargin":"false",
+        "positionSide":"SHORT",
+        "notional":"-97.83502110",
+        "isolatedWallet":"0",
+        "updateTime":1664495026797
+    }

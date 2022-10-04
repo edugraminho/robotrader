@@ -3,17 +3,10 @@ import os
 from datetime import datetime
 
 
-# ==================== WALLET ==========================
-# valor de aporte por moeda
-PURCHASE_VALUE = 15
-STOP_LOSS_PERCENTAGE = 8
-PURCHASE_PERCENTAGE = 3
-# ======================================================
-
 # ==================== API BINANCE ====================
-PERCENTAGE_BUY = 5
-QNT_CRYPTOS_TO_PURCHASE = 45
+QNT_CRYPTOS_TO_PURCHASE = 30
 PERCENTAGE_STOP = 3
+LEVERAGE = 20
 
 API_KEY = "L8vTV38sqckhCZCT403TlRqxZHSGuASm95QckB9y5Hmg6g1OUddff79Y1k9DGGLb"
 API_SECRET = "X4TE8ehw2891qrLgT4iQSoFn6kwnQXy1V6ispA34cdWf0kq9PXP9Xa1d1EW880Nt"
