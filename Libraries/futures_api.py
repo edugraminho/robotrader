@@ -22,6 +22,17 @@ def adjuste_round(value):
         return int(value)
 
 
+def adjust_leverage(crypto):
+    try:
+        return client.futures_change_leverage(
+            symbol=crypto, 
+            leverage=LEVERAGE
+            )
+
+    except Exception as e:
+        logger.error(f"adjust_leverage. Erro: {e}")
+        pass
+
 def get_current_price_crypto(crypto):
     try: 
         date_price = client.get_recent_trades(symbol=crypto, limit=1)
@@ -48,6 +59,7 @@ def create_order_buy_long_or_short(crypto, buy_or_sell, direction, quantity):
         return res
     except Exception as e:
         logger.error(f'Erro create_order_buy_long_or_short: {e}')
+        pass
 
 
 def closed_market(index, crypto, direction, qtd):
@@ -149,3 +161,278 @@ def get_all_open_positions():
 
     except Exception as e:
         logger.error(f"get_all_open_positions. Erro: {e}")
+
+
+
+def add_stop_limit(crypto, direction, stop_price):
+    try:
+        all_positions = get_all_open_positions()
+
+        for position in all_positions:
+            if position["symbol"] == crypto:
+                print(position["symbol"], position["symbol"], position["symbol"], position["symbol"])
+        buy_or_sell = "SELL"
+
+        if direction == "SHORT":
+            buy_or_sell = "BUY"
+
+        res = client.futures_create_order(
+            symbol=crypto,
+            side=buy_or_sell,
+            type='STOP_MARKET',
+            positionSide=direction,
+            stopPrice=stop_price,
+            closePosition=True,
+            timeInForce='GTE_GTC'
+            )
+        return res
+
+    except Exception as e:
+        raise e
+        logger.error(f'Erro add_stop_limit: {e}')
+        return {"side":"ERROR","status": "CLOSE_ERROR", "error": e}
+
+
+def cancel_open_order():
+    try:
+        all_positions = get_all_open_positions()
+        all_open_orders = client.futures_get_open_orders()
+
+        for position in all_positions:
+            for open_orders in all_open_orders:
+                if position["symbol"] != open_orders["symbol"]:
+                    client.futures_cancel_order(
+                        symbol=open_orders["symbol"],
+                        orderId=open_orders["orderId"]
+                        )
+    except Exception as e:
+        logger.error(f'Erro cancel_open_order: {e}')
+        raise e
+
+
+def add_take_profit(crypto, direction, price):
+    try:
+        all_positions = get_all_open_positions()
+
+        for position in all_positions:
+            if position["symbol"] == crypto:
+
+                buy_or_sell = "SELL"
+
+                if direction == "SHORT":
+                    buy_or_sell = "BUY"
+                
+                # pego a quantidade de take profits + 1 do close position
+                amount_take_profits = len(LIST_PERCENTAGE_TAKE_PROFITS) + 1
+
+                amount_per_profits = float(position["unRealizedProfit"]) / amount_take_profits
+
+                print("amount_per_profits", amount_per_profits)
+                for perc_take_profit in LIST_PERCENTAGE_TAKE_PROFITS:
+
+                    perc = perc_take_profit / 100
+                    stop_price = float(position["entryPrice"]) + (float(position["entryPrice"]) * perc)
+
+                    client.futures_create_order(
+                        symbol=crypto,
+                        side=buy_or_sell,
+                        type="TAKE_PROFIT_MARKET",
+                        positionSide=direction,
+                        stopPrice=stop_price,
+                        quantity=round(amount_per_profits, 4),
+                        timeInForce='GTE_GTC'
+                        )
+
+    except Exception as e:
+        logger.error(f'Erro add_take_profit: {e}')
+        raise e
+
+
+'''
+[
+   {
+      "orderId":6603176803,
+      "symbol":"GRTUSDT",
+      "status":"NEW",
+      "clientOrderId":"3qzLPi0yH9npDq2Cemg4T7",
+      "price":"0",
+      "avgPrice":"0",
+      "origQty":"0",
+      "executedQty":"0",
+      "cumQuote":"0",
+      "timeInForce":"GTC",
+      "type":"STOP_MARKET",
+      "reduceOnly":true,
+      "closePosition":true,
+      "side":"SELL",
+      "positionSide":"LONG",
+      "stopPrice":"0.09570",
+      "workingType":"CONTRACT_PRICE",
+      "priceProtect":false,
+      "origType":"STOP_MARKET",
+      "time":1665229560351,
+      "updateTime":1665229560351
+   },
+   {
+      "orderId":82028560617,
+      "symbol":"BTCUSDT",
+      "status":"NEW",
+      "clientOrderId":"NHMmGcmHPdpj6PjnLhsuc4",
+      "price":"0",
+      "avgPrice":"0",
+      "origQty":"0",
+      "executedQty":"0",
+      "cumQuote":"0",
+      "timeInForce":"GTC",
+      "type":"STOP_MARKET",
+      "reduceOnly":true,
+      "closePosition":true,
+      "side":"SELL",
+      "positionSide":"LONG",
+      "stopPrice":"19134",
+      "workingType":"CONTRACT_PRICE",
+      "priceProtect":false,
+      "origType":"STOP_MARKET",
+      "time":1665228609662,
+      "updateTime":1665228609662
+   },
+   {
+      "orderId":7798392109,
+      "symbol":"MANAUSDT",
+      "status":"NEW",
+      "clientOrderId":"eKegDwf2A7GS3UVBNuKlMM",
+      "price":"0",
+      "avgPrice":"0",
+      "origQty":"0",
+      "executedQty":"0",
+      "cumQuote":"0",
+      "timeInForce":"GTC",
+      "type":"STOP_MARKET",
+      "reduceOnly":true,
+      "closePosition":true,
+      "side":"SELL",
+      "positionSide":"LONG",
+      "stopPrice":"0.6840",
+      "workingType":"CONTRACT_PRICE",
+      "priceProtect":false,
+      "origType":"STOP_MARKET",
+      "time":1665230733961,
+      "updateTime":1665230733961
+   },
+   {
+      "orderId":4389712130,
+      "symbol":"ALICEUSDT",
+      "status":"NEW",
+      "clientOrderId":"50cOegmBrBwc4spn8US5XU",
+      "price":"0",
+      "avgPrice":"0",
+      "origQty":"0",
+      "executedQty":"0",
+      "cumQuote":"0",
+      "timeInForce":"GTC",
+      "type":"STOP_MARKET",
+      "reduceOnly":true,
+      "closePosition":true,
+      "side":"SELL",
+      "positionSide":"LONG",
+      "stopPrice":"1.690",
+      "workingType":"CONTRACT_PRICE",
+      "priceProtect":false,
+      "origType":"STOP_MARKET",
+      "time":1665233129388,
+      "updateTime":1665233129388
+   },
+   {
+      "orderId":1726773133,
+      "symbol":"GTCUSDT",
+      "status":"NEW",
+      "clientOrderId":"5AWBGCloGlYxHalVgyuELI",
+      "price":"0",
+      "avgPrice":"0",
+      "origQty":"0",
+      "executedQty":"0",
+      "cumQuote":"0",
+      "timeInForce":"GTC",
+      "type":"STOP_MARKET",
+      "reduceOnly":true,
+      "closePosition":true,
+      "side":"SELL",
+      "positionSide":"LONG",
+      "stopPrice":"1.790",
+      "workingType":"CONTRACT_PRICE",
+      "priceProtect":false,
+      "origType":"STOP_MARKET",
+      "time":1665212470273,
+      "updateTime":1665212470274
+   },
+   {
+      "orderId":2996539940,
+      "symbol":"HBARUSDT",
+      "status":"NEW",
+      "clientOrderId":"XcsJyD9XawPDzdtFdKMnsX",
+      "price":"0",
+      "avgPrice":"0",
+      "origQty":"0",
+      "executedQty":"0",
+      "cumQuote":"0",
+      "timeInForce":"GTC",
+      "type":"STOP_MARKET",
+      "reduceOnly":true,
+      "closePosition":true,
+      "side":"SELL",
+      "positionSide":"LONG",
+      "stopPrice":"0.05860",
+      "workingType":"CONTRACT_PRICE",
+      "priceProtect":false,
+      "origType":"STOP_MARKET",
+      "time":1665217821276,
+      "updateTime":1665217821276
+   },
+   {
+      "orderId":4629827564,
+      "symbol":"ONEUSDT",
+      "status":"NEW",
+      "clientOrderId":"qlpIvea0LAdRDh1VPPNDf2",
+      "price":"0",
+      "avgPrice":"0",
+      "origQty":"0",
+      "executedQty":"0",
+      "cumQuote":"0",
+      "timeInForce":"GTC",
+      "type":"STOP_MARKET",
+      "reduceOnly":true,
+      "closePosition":true,
+      "side":"SELL",
+      "positionSide":"LONG",
+      "stopPrice":"0.01880",
+      "workingType":"CONTRACT_PRICE",
+      "priceProtect":false,
+      "origType":"STOP_MARKET",
+      "time":1665212423843,
+      "updateTime":1665212423843
+   },
+   {
+      "orderId":7866666382,
+      "symbol":"ZILUSDT",
+      "status":"NEW",
+      "clientOrderId":"cf8AYY647dBV2s3sTXmCI6",
+      "price":"0",
+      "avgPrice":"0",
+      "origQty":"0",
+      "executedQty":"0",
+      "cumQuote":"0",
+      "timeInForce":"GTC",
+      "type":"STOP_MARKET",
+      "reduceOnly":true,
+      "closePosition":true,
+      "side":"SELL",
+      "positionSide":"LONG",
+      "stopPrice":"0.03100",
+      "workingType":"CONTRACT_PRICE",
+      "priceProtect":false,
+      "origType":"STOP_MARKET",
+      "time":1665222311694,
+      "updateTime":1665222311694
+   }
+]
+'''

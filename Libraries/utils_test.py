@@ -29,7 +29,7 @@ NOW = datetime.now().strftime("%d%m - %H:%M")
 DATA_DIRECTORY = os.path.join(ROOT, "Data")
 # ===============================================================
 
-value = """꧁༺ 𝓢𝓒𝓐𝓛𝓟𝓘𝓝𝓖 300 ༻꧂
+"""꧁༺ 𝓢𝓒𝓐𝓛𝓟𝓘𝓝𝓖 300 ༻꧂
 
 ✬S◦C°A˚L°P◦I... GTCUSDT ...N◦G°3˚0°0◦0✬
 𝓓𝓲𝓻𝓮𝓬𝓽𝓲𝓸𝓷 : LONG
@@ -46,14 +46,17 @@ Target 3 - 2.45004
 Target 4 - 2.47406
 Target 5 - 2.49808"""
 
-# value = '''
-# Binance Futures, ByBit USDT
-# #ADA/USDT All take-profit targets achieved 😎
-
-# '''
+value = '''
+Binance Futures, ByBit USDT
+ADA/USDT All take-profit targets achieved 😎
+'''
 # Binance Futures
 #ZEN/USDT Closed due to opposite direction signal ⚠
-
+"""
+ByBit USDT, Binance Futures
+#IOST/USDT Cancelled ❌
+Target achieved before entering the entry zone
+"""
 
 # Binance Futures
 #GTC/USDT All entry targets achieved
@@ -76,9 +79,9 @@ def insert_csv(value):
 
     direction = re.search('LONG|SHORT', value)
 
-    closed_signal = re.search('Closed|All entry|All take-profit', value)
-
-
+    closed_signal = re.search('Closed|All entry|All take-profit|Cancelled', value)
+    print(closed_signal)
+    return closed_signal
     crypto_name = None
     direction = None
     signal_type = None
@@ -99,7 +102,7 @@ def insert_csv(value):
         direction = "-"
 
 
-# insert_csv(value)
+insert_csv(value)
 
 def read_csv():
     new_dict = []

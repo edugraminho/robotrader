@@ -27,7 +27,7 @@ def insert_csv(value, date, index):
 
         direction = re.search('LONG|SHORT', value)
 
-        closed_signal = re.search('Closed|All entry|All take-profit', value)
+        closed_signal = re.search('Closed|All entry|All take-profit|Cancelled', value)
 
         all_take_profit = re.search('All take-profit', value)
 

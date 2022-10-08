@@ -4,9 +4,12 @@ from datetime import datetime
 
 
 # ==================== API BINANCE ====================
-QNT_CRYPTOS_TO_PURCHASE = 30
-PERCENTAGE_STOP = 3
+QNT_CRYPTOS_TO_PURCHASE = 30 #o maximo de cryptos a serem negociadas, total / pelo saldo
+PERCENTAGE_STOP = 2
 LEVERAGE = 20
+
+LIST_PERCENTAGE_TAKE_PROFITS = [2, 4, 6]
+
 
 API_KEY = "L8vTV38sqckhCZCT403TlRqxZHSGuASm95QckB9y5Hmg6g1OUddff79Y1k9DGGLb"
 API_SECRET = "X4TE8ehw2891qrLgT4iQSoFn6kwnQXy1V6ispA34cdWf0kq9PXP9Xa1d1EW880Nt"

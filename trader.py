@@ -52,6 +52,16 @@ def trade():
                     )
                 price = get_current_price_crypto(crypto_name)
                 stop_price = calculate_price_stop_limit(crypto_name)
+                print(status_buy["status"])
+
+                time.sleep(2)
+
+                status_stop = add_stop_limit(crypto_name, last_spot["direction"], stop_price)
+                print("STOOOOOOOOOOOOOOOP", status_stop)
+                status_take_profit = add_take_profit(crypto_name, last_spot["direction"], price)
+                print('TAAAAAAAAAAAAAAKE', status_take_profit)
+
+
 
 
                 if status_buy["status"] == "NEW":
@@ -65,6 +75,7 @@ def trade():
                         stop_price=stop_price,
                         qtd=status_buy['origQty']
                         )
+
 
         except Exception as e:
             insert_csv_status(
@@ -183,6 +194,10 @@ def trade():
 
 asyncio.run(trade())
 
+def test():
+    return cancel_open_order()
+
+# print(test())
 
 """
 > Usar a funcao get_all_open_positions para verificar se ja existem posicoes abertas
@@ -212,5 +227,9 @@ Se symbol == crypto_name and .....
             stopPrice='0.49',
             closePosition=True
             )
+
+
+
+> Ajustar a DATA csv
 
 """

@@ -20,7 +20,7 @@ logger = get_logger(__name__)
 def connect():
     logger.info("Iniciando conexao Telegram")
     try:
-        proxy = (socks.SOCKS5, "45.239.152.141", "3001")
+        proxy = (socks.SOCKS5, "45.239.152.141", 3001)
         client = TelegramClient(proxy=proxy, session=f'{DATA_DIRECTORY}/session_name', api_id=API_ID, api_hash=API_HASH)
         client.connect()
 
@@ -43,7 +43,7 @@ def get_messages_group(client):
         title = "Brazza Scalping Vip"
         for chat in result.chats:
             if chat.title == title:
-                messages = client.get_messages(chat, limit=3)
+                messages = client.get_messages(chat, limit=1)
                 for message in messages:
                     check_csv = check_index_repeated(message.id)
                     if check_csv:
