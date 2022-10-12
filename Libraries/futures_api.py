@@ -12,12 +12,18 @@ logger = get_logger(__name__)
 
 
 def adjuste_round(value):
+    if value < 0.01:
+        return round(float(value), 5)
+    if value < 0.1:
+        return round(float(value), 4)
     if value < 1:
-        return round(value, 4)
-    if value < 100:
-        return round(value, 2)
-    if value < 500:
-        return round(value, 1)
+        return round(float(value), 3)
+    if value < 10:
+        return round(float(value), 2)
+    if value < 300:
+        return round(float(value), 1)
+    # if value < 500:
+    #     return round(value, 1)
     else:
         return int(value)
 
@@ -130,13 +136,16 @@ def find_value_to_aport(crypto):
 
 
 
-def calculate_price_stop_limit(crypto):
+def calculate_price_stop_limit(crypto, direction):
     try: 
         cur_price = get_current_price_crypto(crypto)
 
         #desconto de 3%
         perc = PERCENTAGE_STOP / 100
+
         stop_price = float(cur_price - (cur_price * perc))
+        if direction == "SHORT":
+            stop_price = float(cur_price + (cur_price * perc))
 
         return adjuste_round(stop_price)
 
@@ -166,11 +175,6 @@ def get_all_open_positions():
 
 def add_stop_limit(crypto, direction, stop_price):
     try:
-        all_positions = get_all_open_positions()
-
-        for position in all_positions:
-            if position["symbol"] == crypto:
-                print(position["symbol"], position["symbol"], position["symbol"], position["symbol"])
         buy_or_sell = "SELL"
 
         if direction == "SHORT":
@@ -188,7 +192,6 @@ def add_stop_limit(crypto, direction, stop_price):
         return res
 
     except Exception as e:
-        raise e
         logger.error(f'Erro add_stop_limit: {e}')
         return {"side":"ERROR","status": "CLOSE_ERROR", "error": e}
 
@@ -210,7 +213,7 @@ def cancel_open_order():
         raise e
 
 
-def add_take_profit(crypto, direction, price):
+def add_take_profit(crypto, direction):
     try:
         all_positions = get_all_open_positions()
 
@@ -223,26 +226,30 @@ def add_take_profit(crypto, direction, price):
                     buy_or_sell = "BUY"
                 
                 # pego a quantidade de take profits + 1 do close position
-                amount_take_profits = len(LIST_PERCENTAGE_TAKE_PROFITS) + 1
+                take_profits = len(LIST_PERCENTAGE_TAKE_PROFITS) + 1
+                amount_per_profits = round(float(position["positionAmt"]) / take_profits, 3)
+                _amount = adjuste_round(amount_per_profits)
 
-                amount_per_profits = float(position["unRealizedProfit"]) / amount_take_profits
-
-                print("amount_per_profits", amount_per_profits)
                 for perc_take_profit in LIST_PERCENTAGE_TAKE_PROFITS:
 
                     perc = perc_take_profit / 100
                     stop_price = float(position["entryPrice"]) + (float(position["entryPrice"]) * perc)
+                    
+                    if direction == "SHORT":
+                        stop_price = float(position["entryPrice"]) - (float(position["entryPrice"]) * perc)
+
+                    _stop = adjuste_round(stop_price)
 
                     client.futures_create_order(
                         symbol=crypto,
                         side=buy_or_sell,
                         type="TAKE_PROFIT_MARKET",
                         positionSide=direction,
-                        stopPrice=stop_price,
-                        quantity=round(amount_per_profits, 4),
-                        timeInForce='GTE_GTC'
+                        stopPrice=_stop,
+                        quantity=abs(_amount),
+                        timeInForce='GTE_GTC',
                         )
-
+                    
     except Exception as e:
         logger.error(f'Erro add_take_profit: {e}')
         raise e

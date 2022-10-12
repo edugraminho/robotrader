@@ -51,16 +51,13 @@ def trade():
                     quantity=value,
                     )
                 price = get_current_price_crypto(crypto_name)
-                stop_price = calculate_price_stop_limit(crypto_name)
-                print(status_buy["status"])
+                stop_price = calculate_price_stop_limit(crypto_name, last_spot["direction"])
 
                 time.sleep(2)
+                add_stop_limit(crypto_name, last_spot["direction"], stop_price)
 
-                status_stop = add_stop_limit(crypto_name, last_spot["direction"], stop_price)
-                print("STOOOOOOOOOOOOOOOP", status_stop)
-                status_take_profit = add_take_profit(crypto_name, last_spot["direction"], price)
-                print('TAAAAAAAAAAAAAAKE', status_take_profit)
-
+                time.sleep(2)
+                add_take_profit(crypto_name, last_spot["direction"])
 
 
 
@@ -195,11 +192,11 @@ def trade():
 asyncio.run(trade())
 
 def test():
-    return cancel_open_order()
+    return add_take_profit('WAVESUSDT', "LONG")
 
-# print(test())
 
 """
+print(test())
 > Usar a funcao get_all_open_positions para verificar se ja existem posicoes abertas
 para evitar comprar 2X. 
 Se symbol == crypto_name and .....

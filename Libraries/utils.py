@@ -75,7 +75,7 @@ def insert_csv(value, date, index):
             if insert:
                 writer.writerow({
                     "index": index,
-                    "date": str(date),
+                    "date": str(date.strftime("%d-%m-%y %H:%M:%S")),
                     "crypto_name": crypto_name,
                     "direction": direction_type,
                     "signal_type": signal_type
