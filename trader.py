@@ -53,12 +53,13 @@ def trade():
                 price = get_current_price_crypto(crypto_name)
                 stop_price = calculate_price_stop_limit(crypto_name, last_spot["direction"])
 
-                time.sleep(2)
-                add_stop_limit(crypto_name, last_spot["direction"], stop_price)
+                try:
+                    add_stop_limit(last_spot["crypto_name"], last_spot["direction"], stop_price)
 
-                time.sleep(2)
-                add_take_profit(crypto_name, last_spot["direction"])
+                    add_take_profit(last_spot["crypto_name"], last_spot["direction"])
 
+                except:
+                    pass
 
 
                 if status_buy["status"] == "NEW":
@@ -108,7 +109,7 @@ def trade():
                         index=index,
                         crypto=crypto_name,
                         direction=direction,
-                        qtd=qtd,
+                        qtd=0,
                     )
 
                     if closing["status"] == "NEW":

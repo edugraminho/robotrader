@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 # ==================== API BINANCE ====================
-QNT_CRYPTOS_TO_PURCHASE = 30 #o maximo de cryptos a serem negociadas, total / pelo saldo
+QNT_CRYPTOS_TO_PURCHASE = 45 #o maximo de cryptos a serem negociadas, total / pelo saldo
 PERCENTAGE_STOP = 2
 LEVERAGE = 20
 

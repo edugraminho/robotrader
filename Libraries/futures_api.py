@@ -11,19 +11,29 @@ client = Client(API_KEY, API_SECRET)
 logger = get_logger(__name__)
 
 
-def adjuste_round(value):
+def adjuste_round_value_aport(value):
+
+    if value < 0.01:
+        return round(float(value), 4)
+    if value < 0.1:
+        return round(float(value), 3)
+    if value < 1:
+        return round(float(value), 2)
+    if value < 10:
+        return round(float(value), 1)
+    else:
+        return int(value)
+
+def adjuste_round_stop_price(value):
+
     if value < 0.01:
         return round(float(value), 5)
     if value < 0.1:
         return round(float(value), 4)
     if value < 1:
         return round(float(value), 3)
-    if value < 10:
+    if value < 999:
         return round(float(value), 2)
-    if value < 300:
-        return round(float(value), 1)
-    # if value < 500:
-    #     return round(value, 1)
     else:
         return int(value)
 
@@ -44,7 +54,7 @@ def get_current_price_crypto(crypto):
         date_price = client.get_recent_trades(symbol=crypto, limit=1)
         price = float(date_price[0]["price"])
 
-        return adjuste_round(price)
+        return adjuste_round_value_aport(price)
 
     except Exception as e:
         logger.error(f"get_current_price_crypto. Erro: {e}")
@@ -125,10 +135,12 @@ def find_value_to_aport(crypto):
 
         _value = ((total_balance * LEVERAGE) / QNT_CRYPTOS_TO_PURCHASE) / price_crypto
 
-        if _value < 1:
+        if _value < 0.1:
             return round(_value, 3)
-        if _value < 10:
+        if _value < 1:
             return round(_value, 2)
+        if _value < 10:
+            return round(_value, 1)
         else:
             return int(_value)
     except Exception as e:
@@ -147,7 +159,7 @@ def calculate_price_stop_limit(crypto, direction):
         if direction == "SHORT":
             stop_price = float(cur_price + (cur_price * perc))
 
-        return adjuste_round(stop_price)
+        return adjuste_round_stop_price(stop_price)
 
     except Exception as e:
         logger.error(f"calculate_price_stop_limit. Erro: {e}")
@@ -215,7 +227,27 @@ def cancel_open_order():
 
 def add_take_profit(crypto, direction):
     try:
+        _all_positions = get_all_open_positions()
+
+        while _all_positions == []:
+            time.sleep(2)
+            timer += 2
+            if timer > time:
+                break
+            if _all_positions:
+                break
+
+
         all_positions = get_all_open_positions()
+
+        while all_positions == []:
+            time.sleep(2)
+            timer += 2
+            if timer > time:
+                break
+            if all_positions:
+                break
+        
 
         for position in all_positions:
             if position["symbol"] == crypto:
@@ -228,7 +260,7 @@ def add_take_profit(crypto, direction):
                 # pego a quantidade de take profits + 1 do close position
                 take_profits = len(LIST_PERCENTAGE_TAKE_PROFITS) + 1
                 amount_per_profits = round(float(position["positionAmt"]) / take_profits, 3)
-                _amount = adjuste_round(amount_per_profits)
+                _amount = adjuste_round_value_aport(amount_per_profits)
 
                 for perc_take_profit in LIST_PERCENTAGE_TAKE_PROFITS:
 
@@ -238,7 +270,7 @@ def add_take_profit(crypto, direction):
                     if direction == "SHORT":
                         stop_price = float(position["entryPrice"]) - (float(position["entryPrice"]) * perc)
 
-                    _stop = adjuste_round(stop_price)
+                    _stop = adjuste_round_stop_price(stop_price)
 
                     client.futures_create_order(
                         symbol=crypto,
@@ -249,10 +281,9 @@ def add_take_profit(crypto, direction):
                         quantity=abs(_amount),
                         timeInForce='GTE_GTC',
                         )
-                    
+
     except Exception as e:
         logger.error(f'Erro add_take_profit: {e}')
-        raise e
 
 
 '''
