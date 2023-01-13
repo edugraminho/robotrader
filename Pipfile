@@ -14,7 +14,8 @@ pandas = "==1.5.0"
 tqdm = "==4.64.1"
 binance-futures-connector = "==3.2.0"
 python-binance = "==1.0.16"
-socks = "*"
+python-socks = {extras = ["asyncio"], version = "*"}
+pymongo = "*"
 
 [requires]
 python_version = "3.10"

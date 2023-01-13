@@ -4,6 +4,7 @@ from Variables.config import *
 from Libraries.utils import *
 from Libraries.telegram_api import *
 from Libraries.futures_api import *
+from Libraries.mongo_db import *
 from Libraries.logger import get_logger
 
 logger = get_logger(__name__)
@@ -11,11 +12,12 @@ logger = get_logger(__name__)
 
 def trade():
 
-    client = connect()
-    while True:
+    connect_db()
+    # client = connect()
+    while False:
         start = time.time()
         # time.sleep(1)
-        get_messages_group(client)
+        get_messages_group()
 
         last_spot = last_spot_dict()
         ###########################################################################
@@ -190,10 +192,9 @@ def trade():
         # print("TEMPO TOTAL DE EXEC: ", round(time.time() - start, 3))
 
 
-asyncio.run(trade())
+# asyncio.run(trade())
+trade()
 
-def test():
-    return add_take_profit('WAVESUSDT', "LONG")
 
 
 """

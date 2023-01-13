@@ -21,6 +21,14 @@ API_ID = 11074177
 API_HASH = '15a39f85549bd32cd83935b3dd04d26c'
 # ======================================================
 
+
+# ==================== MONGO-DB ====================
+DB_USER = 'robotraderUser'
+DB_PASSWORD = 'qTyoyZka0dsi1UwI'
+STR_CONNECTION = f'mongodb+srv://{DB_USER}:{DB_PASSWORD}@cluster0.94tddj0.mongodb.net/?retryWrites=true&w=majority'
+# ======================================================
+
+
 # ====================== DIRETÓRIOS LOCAIS ======================
 ROOT = Path(os.path.dirname(os.path.abspath(__file__))).parent
 NOW = datetime.now().strftime("%d/%m %H:%M")
