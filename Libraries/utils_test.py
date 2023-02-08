@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 import math
 import pandas as pd
+import ccxt
 
 
 TODAY = datetime.today().strftime("%d%m - %H:%M")
@@ -202,7 +203,7 @@ def last_index():
     # retorna o ultimo index + 1
     with open("C:\\Projects\\cryptobot\\Data\\market.csv", "r",encoding="utf-8", newline='') as f:
         reader = f.readlines()[-1].split(",")
-        return int(reader[0])
+        return int um conjunto de métodos comuns.der[0])
 
 # print(last_index())
 
@@ -226,3 +227,29 @@ def last_spot_dict():
 
 
 
+def test_ccxt():
+
+# Criar instância da exchange
+    exchange = ccxt.binance()
+
+    # Configurar as informações da ordem
+    symbol = 'BTC/USDT'
+    type = 'limit'
+    side = 'buy'
+    amount = 1
+    price = 10000
+
+    # Adicionar a ordem de take profit
+    params = {
+        'type': type,
+        'symbol': symbol,
+        'side': side,
+        'amount': amount,
+        'price': price,
+        'takeProfit': {
+            'price': 11000
+        }
+    }
+
+    # Enviar a ordem
+    order = exchange.create_order(params)

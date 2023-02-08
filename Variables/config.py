@@ -8,11 +8,11 @@ QNT_CRYPTOS_TO_PURCHASE = 45 #o maximo de cryptos a serem negociadas, total / pe
 PERCENTAGE_STOP = 2
 LEVERAGE = 20
 
-LIST_PERCENTAGE_TAKE_PROFITS = [2, 4, 6]
+LIST_TARGETS_TAKE_PROFITS = [2, 4, 6]
 
-
-API_KEY = "L8vTV38sqckhCZCT403TlRqxZHSGuASm95QckB9y5Hmg6g1OUddff79Y1k9DGGLb"
-API_SECRET = "X4TE8ehw2891qrLgT4iQSoFn6kwnQXy1V6ispA34cdWf0kq9PXP9Xa1d1EW880Nt"
+# API_KEY EDU
+API_KEY = "m8g5mtYnftzWUTYAGro7U77lE42ky7KRk7ylNGAmb8CtLVSOuqp7G5PwTLHjll45"
+API_SECRET = "Vx2FRCexMsI8Lz3OG6WqoleIJjUY8ScuoIHfBt2XgJpYAss5f2bv1clerDvZCoA5"
 # ======================================================
 
 
@@ -25,7 +25,8 @@ API_HASH = '15a39f85549bd32cd83935b3dd04d26c'
 # ==================== MONGO-DB ====================
 DB_USER = 'robotraderUser'
 DB_PASSWORD = 'qTyoyZka0dsi1UwI'
-STR_CONNECTION = f'mongodb+srv://{DB_USER}:{DB_PASSWORD}@cluster0.94tddj0.mongodb.net/?retryWrites=true&w=majority'
+CLUSTER = 'cluster0'
+URI = f'mongodb+srv://{DB_USER}:{DB_PASSWORD}@{CLUSTER}.94tddj0.mongodb.net/?retryWrites=true&w=majority'
 # ======================================================
 
 

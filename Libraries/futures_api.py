@@ -3,7 +3,7 @@ import math
 from binance.enums import *
 from Libraries.utils import *
 from Libraries.logger import get_logger
-from Variables.config import * 
+from Variables.config import *
 
 
 client = Client(API_KEY, API_SECRET)
@@ -24,6 +24,7 @@ def adjuste_round_value_aport(value):
     else:
         return int(value)
 
+
 def adjuste_round_stop_price(value):
 
     if value < 0.01:
@@ -41,16 +42,17 @@ def adjuste_round_stop_price(value):
 def adjust_leverage(crypto):
     try:
         return client.futures_change_leverage(
-            symbol=crypto, 
+            symbol=crypto,
             leverage=LEVERAGE
-            )
+        )
 
     except Exception as e:
         logger.error(f"adjust_leverage. Erro: {e}")
         pass
 
+
 def get_current_price_crypto(crypto):
-    try: 
+    try:
         date_price = client.get_recent_trades(symbol=crypto, limit=1)
         price = float(date_price[0]["price"])
 
@@ -63,28 +65,51 @@ def get_current_price_crypto(crypto):
 
 def create_order_buy_long_or_short(crypto, buy_or_sell, direction, quantity):
     try:
-        res = client.futures_create_order(
-            symbol=crypto,
-            side=buy_or_sell,
-            positionSide=direction,
-            dualSidePosition= False,
-            type='MARKET',
-            quantity=quantity
-            )
+        precision = 5
+        qty = quantity
+        print(qty)
 
-        return res
+        while True:
+            try:
+                res = client.futures_create_order(
+                    symbol=crypto,
+                    side=buy_or_sell,
+                    positionSide=direction,
+                    dualSidePosition=False,
+                    type='MARKET',
+                    quantity=qty
+                )
+
+                return res
+
+            except Exception as e:
+                '''
+                    Erro -1111 eh quando a precisao esta acima para o ativo
+                    vai diminuindo as casas decimais at'e dar certo
+                '''
+                if e.code == -1111:
+                    precision -= 1
+                    if precision == 0:
+                        qty = int(qty)
+                    qty = round(
+                        float(qty), precision)
+                    continue
+                else:
+                    raise e
+
     except Exception as e:
         logger.error(f'Erro create_order_buy_long_or_short: {e}')
         pass
 
 
-def closed_market(index, crypto, direction, qtd):
+def closed_market(index, crypto, direction, qty):
     try:
         all_positions = get_all_open_positions()
 
         for position in all_positions:
             if position["symbol"] == crypto:
-                current_amount = int(math.ceil(abs(float(position["positionAmt"])))*1.2)
+                current_amount = int(
+                    math.ceil(abs(float(position["positionAmt"])))*1.2)
 
                 buy_or_sell = "SELL"
 
@@ -95,20 +120,19 @@ def closed_market(index, crypto, direction, qtd):
                     symbol=crypto,
                     side=buy_or_sell,
                     positionSide=direction,
-                    dualSidePosition= False,
+                    dualSidePosition=False,
                     type='MARKET',
                     quantity=current_amount,
-                    )
+                )
 
                 return res
         else:
             logger.error(f'Erro closed_market: {index} - {crypto}')
-            return {"side":"ERROR","status": "CLOSE_ERROR"}
+            return {"side": "ERROR", "status": "CLOSE_ERROR"}
 
     except Exception as e:
         logger.error(f'Erro closed_market: {e}')
-        return {"side":"ERROR","status": "CLOSE_ERROR", "error": e}
-
+        return {"side": "ERROR", "status": "CLOSE_ERROR", "error": e}
 
 
 def get_balance():
@@ -121,10 +145,9 @@ def get_balance():
             wallet.append({
                 "total_balance": round(float(b["balance"]), 2),
                 "available_balance": round(float(b["withdrawAvailable"]), 2)
-                })
+            })
 
     return wallet
-
 
 
 def find_value_to_aport(crypto):
@@ -133,7 +156,8 @@ def find_value_to_aport(crypto):
         price_crypto = get_current_price_crypto(crypto)
         total_balance = get_balance()[0]["total_balance"]
 
-        _value = ((total_balance * LEVERAGE) / QNT_CRYPTOS_TO_PURCHASE) / price_crypto
+        _value = ((total_balance * LEVERAGE) /
+                  QNT_CRYPTOS_TO_PURCHASE) / price_crypto
 
         if _value < 0.1:
             return round(_value, 3)
@@ -147,12 +171,11 @@ def find_value_to_aport(crypto):
         logger.error(f"find_value_to_aport. Erro: {e}")
 
 
-
 def calculate_price_stop_limit(crypto, direction):
-    try: 
+    try:
         cur_price = get_current_price_crypto(crypto)
 
-        #desconto de 3%
+        # desconto de 3%
         perc = PERCENTAGE_STOP / 100
 
         stop_price = float(cur_price - (cur_price * perc))
@@ -170,19 +193,19 @@ def get_all_open_positions():
     try:
         all_open_positions_list = []
 
-        all_open_positions = client.futures_position_information()
-        for positions in all_open_positions:
-            amount = positions["positionAmt"]
-            unrealized = float(positions['unRealizedProfit'])
-            if amount != "0" and unrealized != 0.00000000:
-                all_open_positions_list.append(positions)
-
+        while not all_open_positions_list:
+            all_open_positions = client.futures_position_information()
+            for positions in all_open_positions:
+                amount = positions["positionAmt"]
+                unrealized = float(positions['unRealizedProfit'])
+                if amount != "0" and unrealized != 0.00000000:
+                    all_open_positions_list.append(positions)
+            time.sleep(1)
 
         return all_open_positions_list
 
     except Exception as e:
         logger.error(f"get_all_open_positions. Erro: {e}")
-
 
 
 def add_stop_limit(crypto, direction, stop_price):
@@ -200,12 +223,12 @@ def add_stop_limit(crypto, direction, stop_price):
             stopPrice=stop_price,
             closePosition=True,
             timeInForce='GTE_GTC'
-            )
+        )
         return res
 
     except Exception as e:
         logger.error(f'Erro add_stop_limit: {e}')
-        return {"side":"ERROR","status": "CLOSE_ERROR", "error": e}
+        return {"side": "ERROR", "status": "CLOSE_ERROR", "error": e}
 
 
 def cancel_open_order():
@@ -219,7 +242,7 @@ def cancel_open_order():
                     client.futures_cancel_order(
                         symbol=open_orders["symbol"],
                         orderId=open_orders["orderId"]
-                        )
+                    )
     except Exception as e:
         logger.error(f'Erro cancel_open_order: {e}')
         raise e
@@ -227,27 +250,9 @@ def cancel_open_order():
 
 def add_take_profit(crypto, direction):
     try:
-        _all_positions = get_all_open_positions()
-
-        while _all_positions == []:
-            time.sleep(2)
-            timer += 2
-            if timer > time:
-                break
-            if _all_positions:
-                break
-
-
         all_positions = get_all_open_positions()
 
-        while all_positions == []:
-            time.sleep(2)
-            timer += 2
-            if timer > time:
-                break
-            if all_positions:
-                break
-        
+        status_take_profit = 0
 
         for position in all_positions:
             if position["symbol"] == crypto:
@@ -256,221 +261,60 @@ def add_take_profit(crypto, direction):
 
                 if direction == "SHORT":
                     buy_or_sell = "BUY"
-                
-                # pego a quantidade de take profits + 1 do close position
-                take_profits = len(LIST_PERCENTAGE_TAKE_PROFITS) + 1
-                amount_per_profits = round(float(position["positionAmt"]) / take_profits, 3)
-                _amount = adjuste_round_value_aport(amount_per_profits)
 
-                for perc_take_profit in LIST_PERCENTAGE_TAKE_PROFITS:
+                # pego a quantidade de take profits + 1 do close position
+                take_profits = len(LIST_TARGETS_TAKE_PROFITS) + 1
+                # _amount = adjuste_round_value_aport(amount_per_profits)
+
+                for perc_take_profit in LIST_TARGETS_TAKE_PROFITS:
+
+                    precision = 5
+                    amount_per_profits = round(
+                        float(position["positionAmt"]) / take_profits, precision)
 
                     perc = perc_take_profit / 100
-                    stop_price = float(position["entryPrice"]) + (float(position["entryPrice"]) * perc)
-                    
+                    stop_price = float(
+                        position["entryPrice"]) + (float(position["entryPrice"]) * perc)
+
                     if direction == "SHORT":
-                        stop_price = float(position["entryPrice"]) - (float(position["entryPrice"]) * perc)
+                        stop_price = float(
+                            position["entryPrice"]) - (float(position["entryPrice"]) * perc)
 
                     _stop = adjuste_round_stop_price(stop_price)
 
-                    client.futures_create_order(
-                        symbol=crypto,
-                        side=buy_or_sell,
-                        type="TAKE_PROFIT_MARKET",
-                        positionSide=direction,
-                        stopPrice=_stop,
-                        quantity=abs(_amount),
-                        timeInForce='GTE_GTC',
-                        )
+                    while True:
+                        try:
+                            status = client.futures_create_order(
+                                symbol=crypto,
+                                side=buy_or_sell,
+                                type="TAKE_PROFIT_MARKET",
+                                positionSide=direction,
+                                stopPrice=_stop,
+                                quantity=abs(amount_per_profits),
+                                timeInForce='GTE_GTC',
+                            )
+
+                            if status:
+                                status_take_profit += 1
+
+                            break
+                        except Exception as e:
+                            # Erro -1111 eh quando a precisao esta acima para o ativo
+                            # vai diminuindo as casas decimais at'e dar certo
+                            if e.code == -1111:
+                                precision -= 1
+
+                                if precision == 0:
+                                    amount_per_profits = int(
+                                        amount_per_profits)
+
+                                amount_per_profits = round(
+                                    float(amount_per_profits), precision)
+                                continue
+                            else:
+                                return (False, status_take_profit)
+
+        return (True, status_take_profit)
 
     except Exception as e:
-        logger.error(f'Erro add_take_profit: {e}')
-
-
-'''
-[
-   {
-      "orderId":6603176803,
-      "symbol":"GRTUSDT",
-      "status":"NEW",
-      "clientOrderId":"3qzLPi0yH9npDq2Cemg4T7",
-      "price":"0",
-      "avgPrice":"0",
-      "origQty":"0",
-      "executedQty":"0",
-      "cumQuote":"0",
-      "timeInForce":"GTC",
-      "type":"STOP_MARKET",
-      "reduceOnly":true,
-      "closePosition":true,
-      "side":"SELL",
-      "positionSide":"LONG",
-      "stopPrice":"0.09570",
-      "workingType":"CONTRACT_PRICE",
-      "priceProtect":false,
-      "origType":"STOP_MARKET",
-      "time":1665229560351,
-      "updateTime":1665229560351
-   },
-   {
-      "orderId":82028560617,
-      "symbol":"BTCUSDT",
-      "status":"NEW",
-      "clientOrderId":"NHMmGcmHPdpj6PjnLhsuc4",
-      "price":"0",
-      "avgPrice":"0",
-      "origQty":"0",
-      "executedQty":"0",
-      "cumQuote":"0",
-      "timeInForce":"GTC",
-      "type":"STOP_MARKET",
-      "reduceOnly":true,
-      "closePosition":true,
-      "side":"SELL",
-      "positionSide":"LONG",
-      "stopPrice":"19134",
-      "workingType":"CONTRACT_PRICE",
-      "priceProtect":false,
-      "origType":"STOP_MARKET",
-      "time":1665228609662,
-      "updateTime":1665228609662
-   },
-   {
-      "orderId":7798392109,
-      "symbol":"MANAUSDT",
-      "status":"NEW",
-      "clientOrderId":"eKegDwf2A7GS3UVBNuKlMM",
-      "price":"0",
-      "avgPrice":"0",
-      "origQty":"0",
-      "executedQty":"0",
-      "cumQuote":"0",
-      "timeInForce":"GTC",
-      "type":"STOP_MARKET",
-      "reduceOnly":true,
-      "closePosition":true,
-      "side":"SELL",
-      "positionSide":"LONG",
-      "stopPrice":"0.6840",
-      "workingType":"CONTRACT_PRICE",
-      "priceProtect":false,
-      "origType":"STOP_MARKET",
-      "time":1665230733961,
-      "updateTime":1665230733961
-   },
-   {
-      "orderId":4389712130,
-      "symbol":"ALICEUSDT",
-      "status":"NEW",
-      "clientOrderId":"50cOegmBrBwc4spn8US5XU",
-      "price":"0",
-      "avgPrice":"0",
-      "origQty":"0",
-      "executedQty":"0",
-      "cumQuote":"0",
-      "timeInForce":"GTC",
-      "type":"STOP_MARKET",
-      "reduceOnly":true,
-      "closePosition":true,
-      "side":"SELL",
-      "positionSide":"LONG",
-      "stopPrice":"1.690",
-      "workingType":"CONTRACT_PRICE",
-      "priceProtect":false,
-      "origType":"STOP_MARKET",
-      "time":1665233129388,
-      "updateTime":1665233129388
-   },
-   {
-      "orderId":1726773133,
-      "symbol":"GTCUSDT",
-      "status":"NEW",
-      "clientOrderId":"5AWBGCloGlYxHalVgyuELI",
-      "price":"0",
-      "avgPrice":"0",
-      "origQty":"0",
-      "executedQty":"0",
-      "cumQuote":"0",
-      "timeInForce":"GTC",
-      "type":"STOP_MARKET",
-      "reduceOnly":true,
-      "closePosition":true,
-      "side":"SELL",
-      "positionSide":"LONG",
-      "stopPrice":"1.790",
-      "workingType":"CONTRACT_PRICE",
-      "priceProtect":false,
-      "origType":"STOP_MARKET",
-      "time":1665212470273,
-      "updateTime":1665212470274
-   },
-   {
-      "orderId":2996539940,
-      "symbol":"HBARUSDT",
-      "status":"NEW",
-      "clientOrderId":"XcsJyD9XawPDzdtFdKMnsX",
-      "price":"0",
-      "avgPrice":"0",
-      "origQty":"0",
-      "executedQty":"0",
-      "cumQuote":"0",
-      "timeInForce":"GTC",
-      "type":"STOP_MARKET",
-      "reduceOnly":true,
-      "closePosition":true,
-      "side":"SELL",
-      "positionSide":"LONG",
-      "stopPrice":"0.05860",
-      "workingType":"CONTRACT_PRICE",
-      "priceProtect":false,
-      "origType":"STOP_MARKET",
-      "time":1665217821276,
-      "updateTime":1665217821276
-   },
-   {
-      "orderId":4629827564,
-      "symbol":"ONEUSDT",
-      "status":"NEW",
-      "clientOrderId":"qlpIvea0LAdRDh1VPPNDf2",
-      "price":"0",
-      "avgPrice":"0",
-      "origQty":"0",
-      "executedQty":"0",
-      "cumQuote":"0",
-      "timeInForce":"GTC",
-      "type":"STOP_MARKET",
-      "reduceOnly":true,
-      "closePosition":true,
-      "side":"SELL",
-      "positionSide":"LONG",
-      "stopPrice":"0.01880",
-      "workingType":"CONTRACT_PRICE",
-      "priceProtect":false,
-      "origType":"STOP_MARKET",
-      "time":1665212423843,
-      "updateTime":1665212423843
-   },
-   {
-      "orderId":7866666382,
-      "symbol":"ZILUSDT",
-      "status":"NEW",
-      "clientOrderId":"cf8AYY647dBV2s3sTXmCI6",
-      "price":"0",
-      "avgPrice":"0",
-      "origQty":"0",
-      "executedQty":"0",
-      "cumQuote":"0",
-      "timeInForce":"GTC",
-      "type":"STOP_MARKET",
-      "reduceOnly":true,
-      "closePosition":true,
-      "side":"SELL",
-      "positionSide":"LONG",
-      "stopPrice":"0.03100",
-      "workingType":"CONTRACT_PRICE",
-      "priceProtect":false,
-      "origType":"STOP_MARKET",
-      "time":1665222311694,
-      "updateTime":1665222311694
-   }
-]
-'''
+        raise e
