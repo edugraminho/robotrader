@@ -1,19 +1,27 @@
-import os
-import csv
+import pdb
 import re
-import time
-import pandas as pd
+import pytz
 from Variables.config import *
 from Libraries.logger import get_logger
+from Libraries.mongo_db import find_all
 
 logger = get_logger(__name__)
 
 
 def processing_signal_messages(untreated_data):
     try:
-        x = []
+        logger.info(f"Processando as mensagem...")
+
+        all_msgs_data = []
+
         for data in untreated_data:
             if data.message != None:
+
+                _date = data.date.astimezone(
+                    pytz.timezone("America/Sao_Paulo")).strftime("%d/%m %H:%M:%S")
+
+                reply_to = data.reply_to.reply_to_msg_id \
+                    if data.reply_to is not None else ""
 
                 new_crypto = re.search('(?<=I... )(.[^#]*USDT)', data.message)
                 closed_crypto = re.search('(?<=#)(.[^#]*USDT)', data.message)
@@ -43,10 +51,10 @@ def processing_signal_messages(untreated_data):
                     insert = True
                     direction_type = "OPEN_ORDER"
 
-                # if all_take_profit != None:
-                #     signal_type = "ALL_TAKE_PROFIT"
-                #     insert = True
-                #     direction_type = "OPEN_ORDER"
+                if all_take_profit != None:
+                    signal_type = "ALL_TAKE_PROFIT"
+                    insert = True
+                    direction_type = "OPEN_ORDER"
 
                 if direction != None:
                     direction_type = direction[0].strip().upper()
@@ -55,26 +63,48 @@ def processing_signal_messages(untreated_data):
                 if insert:
                     signal_message = {
                         "_id": data.id,
-                        "date": str(data.date.strftime("%d-%m %H:%M:%S")),
+                        "reply_to": reply_to,
+                        "date": str(_date),
                         "crypto_name": crypto_name,
                         "direction": direction_type,
                         "signal_type": signal_type,
                         "status": "",
                         "price_buy": "",
                         "stop_price": "",
-                        "qty": ""
+                        "qty": "",
                     }
 
-                    return signal_message
-
-        # import pdb; pdb.set_trace()
+                    all_msgs_data.append(signal_message)
+        return all_msgs_data
     except Exception as e:
         logger.error(e)
         pass
 
 
+def check_closing_orders_db(cll):
+    try:
+        query = {
+            "$and": [
+                {"$or": [
+                    {"signal_type": "CLOSE"},
+                    {"signal_type": "ALL_TAKE_PROFIT"}
+                ]},
+                {"direction": "OPEN_ORDER"}
+            ]}
+
+        new_closing_orders = find_all(cll, query)
+
+        if new_closing_orders:
+            return (True, new_closing_orders)
+
+        return (False, "")
+
+    except Exception as e:
+        logger.error("check_position_closing", e)
+        return (False, "")
 
 
+'''
 
 def last_spot_dict():
     try:
@@ -189,54 +219,5 @@ def check_all_stop_loss():
         return (False, "")
     except:
         return (False, "")
+'''
 
-
-def check_position_closing(all_positions):
-    try:
-        df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
-
-        for positions in all_positions:
-            close = df.loc[
-                lambda df: ((df['signal_type'] == 'CLOSE') | (
-                    df['signal_type'] == 'ALL_TAKE_PROFIT'))
-                & (df['direction'] == 'OPEN_ORDER')
-                & (df['crypto_name'] == positions["symbol"])]
-
-            # close = df.loc[
-            #     lambda df: (df['crypto_name'] == positions["symbol"])
-            #         & (df['direction'] == 'OPEN_ORDER')
-            #         & (df['status'] != 'SELL')]
-
-            if not close.empty:
-                # adiciona a direcao do spot na coluna
-                df._set_value(close.index[0], 'direction',
-                              positions["positionSide"])
-                df.to_csv(f"{DATA_DIRECTORY}/market.csv", index=False)
-
-                return (True, close, positions["positionSide"])
-
-        all_positions = db.collection_name.find(
-            {
-                "$and": [
-                    {"signal_type": {"$in": ['CLOSE', 'ALL_TAKE_PROFIT']}},
-                    {"direction": "OPEN_ORDER"},
-                    {"crypto_name": positions["symbol"]}
-                ]
-            }
-        )
-
-        all_positions = db.collection_name.find(
-            {
-                "$and": [
-                    {"signal_type": {"$in": ['CLOSE', 'ALL_TAKE_PROFIT']}},
-                    {"direction": "OPEN_ORDER"},
-                    {"crypto_name": positions["symbol"]}
-                ]
-            }
-        ).sort({'_id': -1}).limit(1)
-
-        return (False, "", "")
-
-    except Exception as e:
-        logger.error("check_position_closing", e)
-        return (False, "")

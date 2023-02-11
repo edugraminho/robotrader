@@ -1,5 +1,6 @@
-from binance.client import Client
 import math
+import time
+from binance.client import Client
 from binance.enums import *
 from Libraries.utils import *
 from Libraries.logger import get_logger
@@ -67,7 +68,6 @@ def create_order_buy_long_or_short(crypto, buy_or_sell, direction, quantity):
     try:
         precision = 5
         qty = quantity
-        print(qty)
 
         while True:
             try:
@@ -80,12 +80,12 @@ def create_order_buy_long_or_short(crypto, buy_or_sell, direction, quantity):
                     quantity=qty
                 )
 
-                return res
+                return (True, res)
 
             except Exception as e:
                 '''
                     Erro -1111 eh quando a precisao esta acima para o ativo
-                    vai diminuindo as casas decimais at'e dar certo
+                    vai diminuindo as casas decimais ate dar certo
                 '''
                 if e.code == -1111:
                     precision -= 1
@@ -99,40 +99,34 @@ def create_order_buy_long_or_short(crypto, buy_or_sell, direction, quantity):
 
     except Exception as e:
         logger.error(f'Erro create_order_buy_long_or_short: {e}')
-        pass
+        return (False, e)
 
 
-def closed_market(index, crypto, direction, qty):
+def closed_market(crypto, direction, amount):
     try:
-        all_positions = get_all_open_positions()
 
-        for position in all_positions:
-            if position["symbol"] == crypto:
-                current_amount = int(
-                    math.ceil(abs(float(position["positionAmt"])))*1.2)
+        # aumenta 10% de qq valor, e para valores como 0.002 arredonda pra 1
+        current_amount = int(math.ceil(abs(float(amount) + (float(amount) * 0.1))))
 
-                buy_or_sell = "SELL"
+        buy_or_sell = "SELL"
 
-                if direction == "SHORT":
-                    buy_or_sell = "BUY"
+        if direction == "SHORT":
+            buy_or_sell = "BUY"
 
-                res = client.futures_create_order(
-                    symbol=crypto,
-                    side=buy_or_sell,
-                    positionSide=direction,
-                    dualSidePosition=False,
-                    type='MARKET',
-                    quantity=current_amount,
-                )
+        status = client.futures_create_order(
+            symbol=crypto,
+            side=buy_or_sell,
+            positionSide=direction,
+            dualSidePosition=False,
+            type='MARKET',
+            quantity=current_amount,
+        )
 
-                return res
-        else:
-            logger.error(f'Erro closed_market: {index} - {crypto}')
-            return {"side": "ERROR", "status": "CLOSE_ERROR"}
+        return (True, status)
 
     except Exception as e:
         logger.error(f'Erro closed_market: {e}')
-        return {"side": "ERROR", "status": "CLOSE_ERROR", "error": e}
+        return (False, e)
 
 
 def get_balance():
@@ -191,9 +185,13 @@ def calculate_price_stop_limit(crypto, direction):
 
 def get_all_open_positions():
     try:
-        all_open_positions_list = []
+        logger.info("Buscando posicoes abertas")
 
-        while not all_open_positions_list:
+        all_open_positions_list = []
+        max_tries = 5
+        tries = 0
+
+        while not all_open_positions_list and tries < max_tries:
             all_open_positions = client.futures_position_information()
             for positions in all_open_positions:
                 amount = positions["positionAmt"]
@@ -201,11 +199,13 @@ def get_all_open_positions():
                 if amount != "0" and unrealized != 0.00000000:
                     all_open_positions_list.append(positions)
             time.sleep(1)
+            tries += 1
 
         return all_open_positions_list
 
     except Exception as e:
         logger.error(f"get_all_open_positions. Erro: {e}")
+
 
 
 def add_stop_limit(crypto, direction, stop_price):
@@ -251,34 +251,32 @@ def cancel_open_order():
 def add_take_profit(crypto, direction):
     try:
         all_positions = get_all_open_positions()
-
         status_take_profit = 0
 
         for position in all_positions:
             if position["symbol"] == crypto:
-
+                entry_price = float(position["entryPrice"])
+                pos_amount = float(position["positionAmt"])
                 buy_or_sell = "SELL"
-
                 if direction == "SHORT":
                     buy_or_sell = "BUY"
 
                 # pego a quantidade de take profits + 1 do close position
                 take_profits = len(LIST_TARGETS_TAKE_PROFITS) + 1
-                # _amount = adjuste_round_value_aport(amount_per_profits)
 
-                for perc_take_profit in LIST_TARGETS_TAKE_PROFITS:
-
+                for sum_take_profit in LIST_TARGETS_TAKE_PROFITS:
                     precision = 5
-                    amount_per_profits = round(
-                        float(position["positionAmt"]) / take_profits, precision)
 
-                    perc = perc_take_profit / 100
-                    stop_price = float(
-                        position["entryPrice"]) + (float(position["entryPrice"]) * perc)
+                    ''' divide em partes iguais '''
+                    amount_per_profits = round(pos_amount / take_profits, precision)
+
+                    ''' Faz o calculo de quanto a moeda tem q custar pra vender 
+                        EX: 6.10 + 0.20 = 6.30'''
+                    _sum = sum_take_profit / 100
+                    stop_price = entry_price + (entry_price * _sum)
 
                     if direction == "SHORT":
-                        stop_price = float(
-                            position["entryPrice"]) - (float(position["entryPrice"]) * perc)
+                        stop_price = float(position["entryPrice"]) - (entry_price * _sum)
 
                     _stop = adjuste_round_stop_price(stop_price)
 
@@ -299,8 +297,8 @@ def add_take_profit(crypto, direction):
 
                             break
                         except Exception as e:
-                            # Erro -1111 eh quando a precisao esta acima para o ativo
-                            # vai diminuindo as casas decimais at'e dar certo
+                            ''' Erro -1111 eh quando a precisao esta acima para o ativo
+                                vai diminuindo as casas decimais ate dar certo'''
                             if e.code == -1111:
                                 precision -= 1
 

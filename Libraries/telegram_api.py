@@ -20,6 +20,8 @@ logger = get_logger(__name__)
 
 def get_messages_group():
     try:
+        logger.info(f"Buscando novos Sinais no Telegram")
+
         with TelegramClient(
             session=f'{DATA_DIRECTORY}/session_name.session',
             api_id=API_ID,
@@ -38,8 +40,8 @@ def get_messages_group():
             for chat in result.chats:
 
                 if chat.title == title:
-                    messages = client.get_messages(chat, limit=3)
-
+                    messages = client.get_messages(chat, limit=MESSAGES_LIMIT)
+                    
                     return messages
 
 
