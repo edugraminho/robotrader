@@ -10,7 +10,7 @@ logger = get_logger(__name__)
 
 def processing_signal_messages(untreated_data):
     try:
-        logger.info(f"Processando as mensagem...")
+        #logger.info(f"Processando as mensagem...")
 
         all_msgs_data = []
 

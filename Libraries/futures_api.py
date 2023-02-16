@@ -185,7 +185,7 @@ def calculate_price_stop_limit(crypto, direction):
 
 def get_all_open_positions():
     try:
-        logger.info("Buscando posicoes abertas")
+        #logger.info("Buscando posicoes abertas")
 
         all_open_positions_list = []
         max_tries = 5

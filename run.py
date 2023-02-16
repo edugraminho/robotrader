@@ -186,8 +186,10 @@ def trade():
 
                     # update_one(cll, id_obj, data_update)
                     logger.error(f'Exception na VENDA: {_ID} - {e}')
-                    raise e
                     pass
+
+
+        time.sleep(10)
 
 
 '''
