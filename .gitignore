@@ -71,3 +71,9 @@ selenium-screenshot-*.png
 *.png
 
 .vscode
+
+Pipfile
+Pipfile.lock
+ws.code-workspace
+*.log
+*.csv

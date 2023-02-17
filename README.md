@@ -130,3 +130,7 @@ GET ALL POSITIONS
         "isolatedWallet":"0",
         "updateTime":1664495026797
     }
+
+
+
+    testando git-pull
