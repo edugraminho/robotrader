@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 # ==================== API BINANCE ====================
-QNT_CRYPTOS_TO_PURCHASE = 50 #o maximo de cryptos a serem negociadas, total / pelo saldo
+QNT_CRYPTOS_TO_PURCHASE = 30 #o maximo de cryptos a serem negociadas, total / pelo saldo
 PERCENTAGE_STOP = 2
 LEVERAGE = 20
 
@@ -20,7 +20,7 @@ API_SECRET = "Vx2FRCexMsI8Lz3OG6WqoleIJjUY8ScuoIHfBt2XgJpYAss5f2bv1clerDvZCoA5"
 API_ID = 11074177
 API_HASH = '15a39f85549bd32cd83935b3dd04d26c'
 
-MESSAGES_LIMIT = 200
+MESSAGES_LIMIT = 10
 # ======================================================
 
 
