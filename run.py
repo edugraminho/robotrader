@@ -191,16 +191,14 @@ def trade():
 
         time.sleep(10)
 
-
 '''
 
         ###########################################################################
         ############################### STOP LOSS #################################
-        # try:
-        #     check_stop = check_all_stop_loss()
 
-        ########################################################################
-        ############################### CLOSE ##################################
+
+        check_stop = check_all_stop_loss()
+        
         all_positions = get_all_open_positions()
 
         check_closing = check_position_closing(all_positions)

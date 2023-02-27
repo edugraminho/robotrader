@@ -36,7 +36,7 @@ def get_messages_group():
                 hash=-0,
             ))
 
-            title = "Scalping_300%"
+            title = "SCALPING 300% VIP"
             for chat in result.chats:
 
                 if chat.title == title:
