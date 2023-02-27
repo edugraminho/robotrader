@@ -1,4 +1,5 @@
 import pdb
+import datetime
 import re
 import pytz
 from Variables.config import *
@@ -83,14 +84,22 @@ def processing_signal_messages(untreated_data):
 
 def check_closing_orders_db(cll):
     try:
+        # Obtem a data atual e formata para o mesmo formato usado no banco de dados
+        current_date = datetime.datetime.now().strftime("%d-%m")
+
         query = {
             "$and": [
-                {"$or": [
-                    {"signal_type": "CLOSE"},
-                    {"signal_type": "ALL_TAKE_PROFIT"}
-                ]},
-                {"direction": "OPEN_ORDER"}
-            ]}
+                {
+                    "$or": [
+                        {"signal_type": "CLOSE"},
+                        {"signal_type": "ALL_TAKE_PROFIT"}
+                    ]
+                },
+                {"direction": "OPEN_ORDER"},
+                # Adiciona o filtro para a data atual
+                {"date": {"$regex": f"^{current_date}"}}
+            ]
+        }
 
         new_closing_orders = find_all(cll, query)
 
