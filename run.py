@@ -48,8 +48,6 @@ def trade():
 
         new_orders = new_buy_orders()
 
-        logger.info("BUY")
-
         all_open_positions = get_all_open_positions_binance()
 
         for new_buy_order in new_orders:
@@ -203,8 +201,6 @@ def trade():
         open_orders = open_orders_db()
 
         #all_open_positions = get_all_open_positions_binance()
-
-        logger.info("all_open_positions")
 
         for open_order in open_orders:
             _ID = open_order["_id"]
