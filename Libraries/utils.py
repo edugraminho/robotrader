@@ -1,10 +1,8 @@
 import pdb
-import datetime
 import re
 import pytz
 from Variables.config import *
 from Libraries.logger import get_logger
-from Libraries.mongo_db import find_all
 
 logger = get_logger(__name__)
 
@@ -80,37 +78,6 @@ def processing_signal_messages(untreated_data):
     except Exception as e:
         logger.error(e)
         pass
-
-
-def check_closing_orders_db(cll):
-    try:
-        # Obtem a data atual e formata para o mesmo formato usado no banco de dados
-        current_date = datetime.datetime.now().strftime("%d-%m")
-
-        query = {
-            "$and": [
-                {
-                    "$or": [
-                        {"signal_type": "CLOSE"},
-                        {"signal_type": "ALL_TAKE_PROFIT"}
-                    ]
-                },
-                {"direction": "OPEN_ORDER"},
-                # Adiciona o filtro para a data atual
-                {"date": {"$regex": f"^{current_date}"}}
-            ]
-        }
-
-        new_closing_orders = find_all(cll, query)
-
-        if new_closing_orders:
-            return (True, new_closing_orders)
-
-        return (False, "")
-
-    except Exception as e:
-        logger.error("check_position_closing", e)
-        return (False, "")
 
 
 '''
@@ -212,21 +179,6 @@ def check_all_spots_closed():
         return (False, '')
 
 
-def check_all_stop_loss():
-    try:
-        df = pd.read_csv(f"{DATA_DIRECTORY}/market.csv")
-        _df = df.loc[lambda df: df['status'] == 'BUY']
-        stop_long = _df.loc[lambda df: df['direction'] == 'LONG']
-        stop_short = _df.loc[lambda df: df['direction'] == 'SHORT']
 
-        if not stop_long.empty:
-            return (True, stop_long)
-
-        if not stop_short.empty:
-            return (True, stop_short)
-
-        return (False, "")
-    except:
-        return (False, "")
 '''
 

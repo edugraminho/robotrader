@@ -183,7 +183,7 @@ def calculate_price_stop_limit(crypto, direction):
         return 'ERROR'
 
 
-def get_all_open_positions():
+def get_all_open_positions_binance():
     try:
         #logger.info("Buscando posicoes abertas")
 
@@ -204,7 +204,7 @@ def get_all_open_positions():
         return all_open_positions_list
 
     except Exception as e:
-        logger.error(f"get_all_open_positions. Erro: {e}")
+        logger.error(f"get_all_open_positions_binance. Erro: {e}")
 
 
 
@@ -233,7 +233,7 @@ def add_stop_limit(crypto, direction, stop_price):
 
 def cancel_open_order():
     try:
-        all_positions = get_all_open_positions()
+        all_positions = get_all_open_positions_binance()
         all_open_orders = client.futures_get_open_orders()
 
         for position in all_positions:
@@ -250,7 +250,7 @@ def cancel_open_order():
 
 def add_take_profit(crypto, direction):
     try:
-        all_positions = get_all_open_positions()
+        all_positions = get_all_open_positions_binance()
         status_take_profit = 0
 
         for position in all_positions:

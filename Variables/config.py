@@ -1,11 +1,11 @@
 from pathlib import Path, PurePath
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 # ==================== API BINANCE ====================
 QNT_CRYPTOS_TO_PURCHASE = 30 #o maximo de cryptos a serem negociadas, total / pelo saldo
-PERCENTAGE_STOP = 2
+PERCENTAGE_STOP = 1.5
 LEVERAGE = 20
 
 LIST_TARGETS_TAKE_PROFITS = [3, 6]
@@ -32,8 +32,10 @@ URI = f'mongodb+srv://{DB_USER}:{DB_PASSWORD}@{CLUSTER}.94tddj0.mongodb.net/?ret
 # ======================================================
 
 
-# ====================== DIRETÓRIOS LOCAIS ======================
+# ====================== DIRETÓRIOS LOCAIS e DATAS ======================
 ROOT = Path(os.path.dirname(os.path.abspath(__file__))).parent
-NOW = datetime.now().strftime("%d/%m %H:%M")
 DATA_DIRECTORY = os.path.join(ROOT, "Data")
+DATA_TO_DELETE_OLD_DATA_MONGODB = datetime.now() - timedelta(days=7)
+NOW = datetime.now().strftime("%d/%m %H:%M")
+CURRENT_DAY = datetime.now().strftime("%d/%m")
 # ===============================================================

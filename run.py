@@ -1,21 +1,36 @@
 import time
 import asyncio
 import pdb
-from Variables.config import *
-from Libraries.utils import processing_signal_messages, check_closing_orders_db
-from Libraries.telegram_api import get_messages_group
-from Libraries.futures_api import *
-from Libraries.mongo_db import (
-    connect_db,
-    insert_new_signal_db,
-    update_one,
-    find_all
-    )
+from Libraries.mongo_db import MongoDb
 from Libraries.logger import get_logger
+from Variables.config import *
+from Libraries.telegram_api import get_messages_group
+from Libraries.utils import (
+    processing_signal_messages
+)
+from Libraries.futures_api import (
+    get_all_open_positions_binance,
+    find_value_to_aport,
+    create_order_buy_long_or_short,
+    get_current_price_crypto,
+    calculate_price_stop_limit,
+    add_stop_limit,
+    add_take_profit,
+    closed_market,
+)
+from Libraries.queries import (
+    insert_new_signal_db,
+    new_buy_orders,
+    update_one,
+    check_closing_orders_db,
+    open_orders_db
+)
 
 logger = get_logger(__name__)
 
-cll = connect_db()
+mongo_db = MongoDb()
+
+mongo_db.test_connection_db()
 
 
 def trade():
@@ -26,128 +41,121 @@ def trade():
 
         signal_data = processing_signal_messages(untreated_message)
 
-        insert_new_signal_db(cll, signal_data)
+        insert_new_signal_db(signal_data)
 
-        # if insert_signal[0]:
-        #     print(f'Sinal inserido no banco: {insert_signal[1]}')
 
-        #{'_id': 55601, 'date': '25-01-23 09:09:35', 'crypto_name': 'IOTXUSDT', 'direction': 'OPEN_ORDER', 'signal_type': 'CLOSE'}
+        mongo_db.delete_old_date()
 
-        #last_spot = get_last_insert(cll)
 
-        #last_spot = {"_id":{"$numberInt":"57848"},"date":"07-02 02:33:38","crypto_name":"EGLDUSDT","direction":"LONG","signal_type":"NEW","status":"","price_buy":"","stop_price":"","qty":""}
-        # time.sleep(10)
-
-        # new_buy_orders = [{"_id":{"$numberInt":"57848"},"date":"07-02 02:33:38","crypto_name":"YYYYUSDT","direction":"LONG","signal_type":"NEW","status":"","price_buy":"","stop_price":"","qty":""},
-        # {"_id":{"$numberInt":"57848"},"date":"07-02 02:33:38","crypto_name":"XXXXUSDT","direction":"LONG","signal_type":"NEW","status":"","price_buy":"","stop_price":"","qty":""},
-        
-        # ]
         ##########################################################################
         ################################# BUY ####################################
-        query = {"signal_type": "NEW", "status": ""}
-        new_buy_orders = find_all(cll, query)
 
-        all_open_positions = get_all_open_positions()
+        new_orders = new_buy_orders()
 
-        for new_buy_order in new_buy_orders:
+        logger.info("BUY")
+
+        all_open_positions = get_all_open_positions_binance()
+
+        for new_buy_order in new_orders:
             _ID = new_buy_order["_id"]
             _CRYPTO_NAME = new_buy_order["crypto_name"]
             _DIRECTION = new_buy_order["direction"]
 
             try:
-                '''
-                    Verifica se há DUPLICIDADE, e atualiza se ouver
-                '''
+                #Verifica se há DUPLICIDADE, e atualiza se ouver
                 for positions in all_open_positions:
                     if _CRYPTO_NAME == positions["symbol"]:
                         logger.info(f'DUPLICIDADE na crypto: {_CRYPTO_NAME}')
                         _id = {"_id": _ID}
 
                         update = {"$set": {"status": "DUPLICATE"}}
-                        update_one(cll, _id, update)
+                        update_one(_id, update)
+                        break
 
                 value = find_value_to_aport(_CRYPTO_NAME)
-                
-                logger.info(" ")
-                logger.info(50*"=")
-                logger.info(f"Nova ordem de COMPRA. Moeda: {_CRYPTO_NAME} - ${value}")
-                logger.info(50*"=")
-                
 
-                buy_or_sell = "BUY"
+
+                logger.info(
+                    f'{50*"="}\n Nova ordem de COMPRA. Moeda: {_CRYPTO_NAME} - ${value}')
                 
+                buy_or_sell = "BUY"
+
                 if _DIRECTION == "SHORT":
                     buy_or_sell = "SELL"
-            
+
                 status_buy = create_order_buy_long_or_short(
                     crypto=_CRYPTO_NAME,
                     buy_or_sell=buy_or_sell,
                     direction=_DIRECTION,
                     quantity=value,
-                    )
+                )
 
                 if status_buy[0]:
-                    
+
                     price = get_current_price_crypto(_CRYPTO_NAME)
-                    stop_price = calculate_price_stop_limit(_CRYPTO_NAME, _DIRECTION)
+                    stop_price = calculate_price_stop_limit(
+                        _CRYPTO_NAME, _DIRECTION)
                     add_stop_limit(_CRYPTO_NAME, _DIRECTION, stop_price)
 
                     status_take = add_take_profit(_CRYPTO_NAME, _DIRECTION)
-                    logger.info(f"Take-Profit. Moeda: {_CRYPTO_NAME} - {status_take[1]}")
+                    logger.info(
+                        f"Take-Profit. Moeda: {_CRYPTO_NAME} - {status_take[1]}")
 
                     if status_buy[1]["status"] == "NEW":
                         # adicionar o status da compra no banco
                         id_obj = {"_id": _ID}
                         data_update = {
                             "$set": {
-                                "signal_type" : status_buy[1]["status"],
-                                "status" : status_buy[1]["side"],
-                                "direction" : status_buy[1]["positionSide"],
-                                "price_buy" : str(price),
-                                "stop_price" : str(stop_price),
-                                "qty" : str(status_buy[1]['origQty'])
-                        }}
-                        update_one(cll, id_obj, data_update)
+                                "signal_type": status_buy[1]["status"],
+                                "status": status_buy[1]["side"],
+                                "direction": status_buy[1]["positionSide"],
+                                "price_buy": str(price),
+                                "stop_price": str(stop_price),
+                                "qty": str(status_buy[1]['origQty'])
+                            }}
+                        update_one(id_obj, data_update)
 
                 else:
                     id_obj = {"_id": _ID}
                     _error = f"ERROR {status_buy[1].code}"
                     data_update = {
                         "$set": {
-                            "signal_type" : "ERROR",
-                            "status" : _error
-                    }}
-                    update_one(cll, id_obj, data_update)
-
+                            "signal_type": "ERROR",
+                            "status": _error
+                        }}
+                    update_one(id_obj, data_update)
 
             except Exception as e:
                 id_obj = {"_id": _ID}
                 data_update = {
                     "$set": {
-                        "signal_type" : "ERROR",
-                        "status" : "EXCEPTION"
-                }}
-                update_one(cll, id_obj, data_update)
+                        "signal_type": "ERROR",
+                        "status": "EXCEPTION"
+                    }}
+                update_one(id_obj, data_update)
                 logger.error(f'Exception na compra: {_ID} - {e}')
                 pass
-        
+
 
         ########################################################################
         ############################### CLOSE ##################################
 
-        all_positions = get_all_open_positions()
+        all_open_positions = get_all_open_positions_binance()
 
-        closing_orders = check_closing_orders_db(cll)
+        closing_orders = check_closing_orders_db()
 
-        if closing_orders[0]: 
+        if closing_orders[0]:
             for close_order in closing_orders[1]:
 
                 _ID = close_order["_id"]
+                _REPLY_TO = close_order["reply_to"]
+                _SIGNAL_TYPE = close_order["signal_type"]
                 _CRYPTO_NAME = close_order["crypto_name"]
                 _DIRECTION = close_order["direction"]
 
+
                 try:
-                    for positions in all_positions:
+                    for positions in all_open_positions:
 
                         if _CRYPTO_NAME == positions["symbol"]:
                             logger.info(" ")
@@ -159,173 +167,127 @@ def trade():
                                 direction=positions["positionSide"],
                                 amount=positions["positionAmt"],
                             )
-                            # if status_closing[0] == False:
-                            #     logger.info("(((((((((((((((((((9)))))))))))))))))))")
 
                             if status_closing[0] and \
-                                status_closing[1]["status"] == "NEW":
+                                    status_closing[1]["status"] == "NEW":
 
                                 _id = {"_id": _ID}
                                 data_update = {
                                     "$set": {
-                                        "status" : status_closing[1]["side"],
-                                        "direction" : status_closing[1]["positionSide"],
-                                        "qty" : str(status_closing[1]['origQty'])
-                                }}
-                                update_one(cll, _id, data_update)
+                                        "status": status_closing[1]["side"],
+                                        "direction": status_closing[1]["positionSide"],
+                                        "qty": str(status_closing[1]['origQty'])
+                                    }}
+                                update_one(_id, data_update)
 
+                                _id_reply = {"reply_to": _REPLY_TO}
+                                data_update = {
+                                    "$set": {
+                                        "status": status_closing[1]["side"],
+                                        "signal_type" : _SIGNAL_TYPE,
+                                    }}
+                                update_one(_id_reply, data_update)
 
                 except Exception as e:
                     id_obj = {"_id": _ID}
                     data_update = {
                         "$set": {
-                            "signal_type" : "ERROR",
-                            "status" : "EXCEPTION"
-                    }}
-                    logger.info(f'****************:  {_CRYPTO_NAME}')
+                            "signal_type": "ERROR",
+                            "status": "EXCEPTION"
+                        }}
 
                     # update_one(cll, id_obj, data_update)
                     logger.error(f'Exception na VENDA: {_ID} - {e}')
                     pass
 
 
-        time.sleep(10)
-
-'''
-
         ###########################################################################
-        ############################### STOP LOSS #################################
+        ############################### STOP LOSS MANUAL #################################
 
+        open_orders = open_orders_db()
 
-        check_stop = check_all_stop_loss()
-        
-        all_positions = get_all_open_positions()
+        #all_open_positions = get_all_open_positions_binance()
 
-        check_closing = check_position_closing(all_positions)
+        logger.info("all_open_positions")
 
-        try:
-            if check_closing[0]: 
-                for _c in check_closing[1].iterrows():
+        for open_order in open_orders:
+            _ID = open_order["_id"]
+            _CRYPTO_NAME = open_order["crypto_name"]
+            _DIRECTION = open_order["direction"]
+            _STATUS = open_order["status"]
+            _STOP_PRICE = float(open_order["stop_price"])
+            
+            for positions in all_open_positions:
+                if _CRYPTO_NAME == positions["symbol"]:
 
-                    index = _c[1]['index']
-                    crypto_name = _c[1]['crypto_name']
-                    direction = check_closing[2]
-                    signal_type = _c[1]['signal_type']
-                    status = _c[1]['status']
+                    _CURRENT_PRICE = float(
+                        get_current_price_crypto(_CRYPTO_NAME))
+                    
+                    try:
 
-                    logger.info(f"Fechando Moeda: {index} - {crypto_name}")
+                        if _STATUS == "BUY" and _DIRECTION == "LONG" and\
+                            _CURRENT_PRICE <= _STOP_PRICE:
 
-                    closing = closed_market(
-                        index=index,
-                        crypto=crypto_name,
-                        direction=direction,
-                        qty=0,
-                    )
+                            logger.info(f"STOP LOSS na crypto: {_CRYPTO_NAME}")
 
-                    if closing["status"] == "NEW":
-                        insert_csv_status(
-                            c_index=index,
-                            direction=direction,
-                            signal_type=signal_type,
-                            status=closing["side"],
+                            status_closing = closed_market(
+                                crypto=_CRYPTO_NAME,
+                                direction=positions["positionSide"],
+                                amount=positions["positionAmt"],
                             )
 
-        except Exception as e:s():
-                    cur_price = float(get_current_price_crypto(s[1]['crypto_name']))
+                            if status_closing[0] and \
+                                    status_closing[1]["status"] == "NEW":
 
-                    index = s[1]['index']
-                    crypto_name = s[1]['crypto_name']
-                    direction = s[1]['direction']
-                    signal_type = s[1]['signal_type']
-                    status = s[1]['status']
-                    price_buy = s[1]['price_buy']
-                    stop_price = float(s[1]['stop_price'])
-                    qty = s[1]['qty']
+                                _id = {"_id": _ID}
+                                data_update = {
+                                    "$set": {
+                                        "status": "STOP_LOSS",
+                                    }}
+                                update_one(_id, data_update)
 
 
-                    if status == "BUY" and direction == "LONG":
-                        if cur_price <= stop_price:
-                            closed_res = closed_market(
-                                index=index,
-                                crypto=crypto_name,
-                                direction=direction,
-                                qty=qty,
-                            )
-                            if closed_res["side"] == "SELL" and closed_res["status"] == "NEW":
-                                insert_csv_status(
-                                    c_index=index,
-                                    direction=direction,
-                                    signal_type=signal_type,
-                                    status="STOP_LOSS",
-                                    price_buy=price_buy,
-                                    stop_price=stop_price,
-                                    )
 
+                        if _STATUS == "BUY" and _DIRECTION == "SHORT" and\
+                            _CURRENT_PRICE >= _STOP_PRICE:
 
-                    if status == "BUY" and direction == "SHORT":
-                        if cur_price >= stop_price:
-                            closed_res = closed_market(
-                                index=index,
-                                crypto=crypto_name,
-                                direction=direction,
-                                qty=qty,
+                            logger.info(f"STOP LOSS na crypto: {_CRYPTO_NAME}")
+
+                            status_closing = closed_market(
+                                crypto=_CRYPTO_NAME,
+                                direction=positions["positionSide"],
+                                amount=positions["positionAmt"],
                             )
 
-                            if closed_res["side"] == "SELL" and closed_res["status"] == "NEW":
-                                insert_csv_status(
-                                    c_index=index,
-                                    direction=direction,
-                                    signal_type=signal_type,
-                                    status="STOP_LOSS",
-                                    )
-        except Exception as e:
-            logger.error("Erro STOP All", e)
-            pass
-        
-        #CASO DUPLIQUE O CODIGO, PARA EVITAR COMPRA REPETIDA
-        if last_spot["signal_type"] == "NEW" and last_spot["status"] == "":
-            logger.info(f'VERIFICAR COMPRA DUPLICADA!!! {last_spot["index"]} - {last_spot["crypto_name"]}')
+                            if status_closing[0] and \
+                                    status_closing[1]["status"] == "NEW":
 
-        print("TEMPO TOTAL DE EXEC: ", round(time.time() - start, 3))
-'''
+                                _id = {"_id": _ID}
+                                data_update = {
+                                    "$set": {
+                                        "status": "STOP_LOSS",
+                                    }}
+                                update_one(_id, data_update)
+
+
+                    except Exception as e:
+                        logger.error("Erro STOP LOSS", e)
+                        pass
+
+
+        # mongo_db.delete_old_date()
+
+        # time.sleep(10)
+
 
 asyncio.run(trade())
-# trade()
-
 
 
 """
-print(test())
-> Usar a funcao get_all_open_positions para verificar se ja existem posicoes abertas
+
+> Usar a funcao get_all_open_positions_binance para verificar se ja existem posicoes abertas
 para evitar comprar 2X. 
+
 Se symbol == crypto_name and .....
-
-> Close market, a data tem q ser maior que a compra. (se nao tem vendas q nao foram fechadas e irá vender)
-
-> Adicionar o ajuste de LEVERAGE (CROSS): client.futures_change_leverage(leverage=20)
-
-> Adicionar o Cancelled no regex de CLOSE market
-
-> STOP LOSS
-        client.futures_create_order(
-            symbol=crypto,
-            side='SELL'
-            type='STOP_MARKET',
-            stopPrice='0.40',
-            closePosition=True
-            )
-
-> TAKE_PROFIT
-        client.futures_create_order(
-            symbol=crypto,
-            side='SELL'
-            type='TAKE_PROFIT_MARKET',
-            stopPrice='0.49',
-            closePosition=True
-            )
-
-
-
-> Ajustar a DATA csv
 
 """
