@@ -37,7 +37,6 @@ class MongoDb:
             }
         }
         status = self.collection.delete_many(query)
-        logger.info(f'DELET {status.result}')
 
     def find_one(self, query):
         return self.collection.find_one(query)
