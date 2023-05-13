@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 # ==================== API BINANCE ====================
 QNT_CRYPTOS_TO_PURCHASE = 30 #o maximo de cryptos a serem negociadas, total / pelo saldo
 PERCENTAGE_STOP = 2
-LEVERAGE = 20
+LEVERAGE = 10
 
 LIST_TARGETS_TAKE_PROFITS = [3, 6]
 

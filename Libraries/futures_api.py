@@ -192,7 +192,7 @@ def get_all_open_positions_binance():
         tries = 0
 
         while not all_open_positions_list and tries < max_tries:
-            all_open_positions = client.futures_position_information()
+            all_open_positions = client.futures_position_information(timeout=30)
             for positions in all_open_positions:
                 amount = positions["positionAmt"]
                 unrealized = float(positions['unRealizedProfit'])

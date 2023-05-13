@@ -148,9 +148,9 @@ def trade():
                 _DIRECTION = close_order["direction"]
 
 
-                try:
-                    for positions in all_open_positions:
+                for positions in all_open_positions:
 
+                    try:
                         if _CRYPTO_NAME == positions["symbol"]:
                             logger.info(" ")
                             logger.info(50*"-")
@@ -182,25 +182,23 @@ def trade():
                                     }}
                                 update_one(_id_reply, data_update)
 
-                except Exception as e:
-                    id_obj = {"_id": _ID}
-                    data_update = {
-                        "$set": {
-                            "signal_type": "ERROR",
-                            "status": "EXCEPTION"
-                        }}
+                    except Exception as e:
+                        id_obj = {"_id": _ID}
+                        data_update = {
+                            "$set": {
+                                "signal_type": "ERROR",
+                                "status": "EXCEPTION"
+                            }}
 
-                    # update_one(cll, id_obj, data_update)
-                    logger.error(f'Exception na VENDA: {_ID} - {e}')
-                    pass
+                        # update_one(cll, id_obj, data_update)
+                        logger.error(f'Exception na VENDA: {_ID} - {e}')
+                        pass
 
 
-        ###########################################################################
-        ############################### STOP LOSS MANUAL #################################
+        #################################################
+        ############### STOP LOSS MANUAL ################
 
         open_orders = open_orders_db()
-
-        #all_open_positions = get_all_open_positions_binance()
 
         for open_order in open_orders:
             _ID = open_order["_id"]
