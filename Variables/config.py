@@ -5,14 +5,14 @@ from datetime import datetime, timedelta
 
 # ==================== API BINANCE ====================
 QNT_CRYPTOS_TO_PURCHASE = 30 #o maximo de cryptos a serem negociadas, total / pelo saldo
-PERCENTAGE_STOP = 1.5
+PERCENTAGE_STOP = 2
 LEVERAGE = 20
 
 LIST_TARGETS_TAKE_PROFITS = [3, 6]
 
 # API_KEY EDU
-API_KEY = "m8g5mtYnftzWUTYAGro7U77lE42ky7KRk7ylNGAmb8CtLVSOuqp7G5PwTLHjll45"
-API_SECRET = "Vx2FRCexMsI8Lz3OG6WqoleIJjUY8ScuoIHfBt2XgJpYAss5f2bv1clerDvZCoA5"
+API_KEY = "v8vVe7tuDci6IyqqyShwEKLTDChem0yXOHGw8LG9MS3TsWvzbrw9sv8WxA35GkNW"
+API_SECRET = "aRifzVj4kcnqGcocUAeUC4GhJFU6f78VOlm8M65OUkmU6k05OWjCPPZJW8t708xX"
 # ======================================================
 
 
@@ -29,6 +29,8 @@ DB_USER = 'robotraderUser'
 DB_PASSWORD = 'qTyoyZka0dsi1UwI'
 CLUSTER = 'cluster0'
 URI = f'mongodb+srv://{DB_USER}:{DB_PASSWORD}@{CLUSTER}.94tddj0.mongodb.net/?retryWrites=true&w=majority'
+
+
 # ======================================================
 
 

@@ -5,8 +5,6 @@ from pathlib import Path, PurePath
 import os
 from datetime import datetime
 import math
-import pandas as pd
-import ccxt
 
 
 TODAY = datetime.today().strftime("%d%m - %H:%M")
@@ -156,19 +154,6 @@ def convert_pryce_crypto_to_int(str_balance):
 # print(convert_pryce_crypto_to_int("09.9"))
 
 
-def buy_or_sell():
-    df = pd.read_csv("C:\\Projects\\cryptobot\\Data\\markettest.csv")
-
-    ind = df.loc[lambda df: df['index'] == 5081]
-    print(ind.index[0])
-
-    df._set_value(ind.index[0],'buy_or_sell','testa')
-
-    df.to_csv("C:\\Projects\\cryptobot\\Data\\markettest.csv", index=False)
-
-
-# buy_or_sell()
-
 
 import time
 
@@ -199,16 +184,6 @@ def last_line_index_signal():
 # print(last_line_index_signal())
 
 
-def last_index():
-    # retorna o ultimo index + 1
-    with open("C:\\Projects\\cryptobot\\Data\\market.csv", "r",encoding="utf-8", newline='') as f:
-        reader = f.readlines()[-1].split(",")
-        return int um conjunto de métodos comuns.der[0])
-
-# print(last_index())
-
-
-
 def last_spot_dict():
     with open("C:\\Projects\\cryptobot\\Data\\market.csv", "r",encoding="utf-8", newline='') as f:
         reader = f.readlines()[-1].split(",")
@@ -224,32 +199,3 @@ def last_spot_dict():
                 }
         return spot
 # print(last_spot_dict())
-
-
-
-def test_ccxt():
-
-# Criar instância da exchange
-    exchange = ccxt.binance()
-
-    # Configurar as informações da ordem
-    symbol = 'BTC/USDT'
-    type = 'limit'
-    side = 'buy'
-    amount = 1
-    price = 10000
-
-    # Adicionar a ordem de take profit
-    params = {
-        'type': type,
-        'symbol': symbol,
-        'side': side,
-        'amount': amount,
-        'price': price,
-        'takeProfit': {
-            'price': 11000
-        }
-    }
-
-    # Enviar a ordem
-    order = exchange.create_order(params)
