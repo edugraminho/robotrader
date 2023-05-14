@@ -184,27 +184,28 @@ def calculate_price_stop_limit(crypto, direction):
 
 
 def get_all_open_positions_binance():
-    try:
-        #logger.info("Buscando posicoes abertas")
-
-        all_open_positions_list = []
-        max_tries = 5
-        tries = 0
-
-        while not all_open_positions_list and tries < max_tries:
+    success = False
+    max_tries = 5
+    tries = 0
+    while not success and tries < max_tries:
+        try:
+            all_open_positions_list = []
             all_open_positions = client.futures_position_information(timeout=30)
             for positions in all_open_positions:
                 amount = positions["positionAmt"]
                 unrealized = float(positions['unRealizedProfit'])
                 if amount != "0" and unrealized != 0.00000000:
                     all_open_positions_list.append(positions)
-            time.sleep(1)
+
+            success = True
+
+        except Exception as e:
+            logger.error(f"get_all_open_positions_binance. Erro: {e}")
             tries += 1
+            time.sleep(10) # espera 10 segundos antes de tentar novamente
 
-        return all_open_positions_list
+    return all_open_positions_list
 
-    except Exception as e:
-        logger.error(f"get_all_open_positions_binance. Erro: {e}")
 
 
 
