@@ -60,11 +60,15 @@ def check_closing_orders_db():
 def open_orders_db():
     query = {
         "signal_type": "NEW", 
-        "status": "BUY", 
+        "status": {
+            "$in": ["BUY", "SELL"]
+            }, 
         "direction": {
             "$in": ["LONG", "SHORT"]
             }
         }
+    
+    # print(mongo_db.collection.count_documents(query))
 
     return mongo_db.find_all(query)
 

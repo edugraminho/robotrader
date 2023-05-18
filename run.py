@@ -36,6 +36,7 @@ mongo_db.test_connection_db()
 def trade():
 
     while True:
+        initial_time = time.time()
 
         untreated_message = get_messages_group()
 
@@ -62,7 +63,13 @@ def trade():
                         logger.info(f'DUPLICIDADE na crypto: {_CRYPTO_NAME}')
                         _id = {"_id": _ID}
 
-                        update = {"$set": {"status": "DUPLICATE"}}
+                        update = {
+                            "$set": {
+                                "status": "DUPLICATE",
+                                "signal_type": "ERROR",
+                                "status": "EXCEPTION",
+                                "direction": "ERROR",
+                            }}
                         update_one(_id, update)
                         break
 
@@ -70,7 +77,7 @@ def trade():
 
 
                 logger.info(
-                    f'{50*"="}\n Nova ordem de COMPRA. Moeda: {_CRYPTO_NAME} - ${value}')
+                    f'{40*"="}\n Nova ordem de COMPRA. Moeda: {_CRYPTO_NAME} - ${value}')
                 
                 buy_or_sell = "BUY"
 
@@ -152,9 +159,7 @@ def trade():
 
                     try:
                         if _CRYPTO_NAME == positions["symbol"]:
-                            logger.info(" ")
-                            logger.info(50*"-")
-                            logger.info(f'Fechando posicao:  {_CRYPTO_NAME}')
+                            logger.info(f'>>> Fechando posicao:  {_CRYPTO_NAME} <<<')
 
                             status_closing = closed_market(
                                 crypto=_CRYPTO_NAME,
@@ -193,83 +198,14 @@ def trade():
                         # update_one(cll, id_obj, data_update)
                         logger.error(f'Exception na VENDA: {_ID} - {e}')
                         pass
-
-
-        #################################################
-        ############### STOP LOSS MANUAL ################
-
-        open_orders = open_orders_db()
-
-        for open_order in open_orders:
-            _ID = open_order["_id"]
-            _CRYPTO_NAME = open_order["crypto_name"]
-            _DIRECTION = open_order["direction"]
-            _STATUS = open_order["status"]
-            _STOP_PRICE = float(open_order["stop_price"])
+            actual_time = time.time()
             
-            for positions in all_open_positions:
-                if _CRYPTO_NAME == positions["symbol"]:
+        exec_time = actual_time - initial_time
 
-                    _CURRENT_PRICE = float(
-                        get_current_price_crypto(_CRYPTO_NAME))
-                    
-                    try:
+        print(f"Tempo de execução: {exec_time:.2f} segundos", end="\r")
 
-                        if _STATUS == "BUY" and _DIRECTION == "LONG" and\
-                            _CURRENT_PRICE <= _STOP_PRICE:
-
-                            logger.info(f"STOP LOSS na crypto: {_CRYPTO_NAME}")
-
-                            status_closing = closed_market(
-                                crypto=_CRYPTO_NAME,
-                                direction=positions["positionSide"],
-                                amount=positions["positionAmt"],
-                            )
-
-                            if status_closing[0] and \
-                                    status_closing[1]["status"] == "NEW":
-
-                                _id = {"_id": _ID}
-                                data_update = {
-                                    "$set": {
-                                        "status": "STOP_LOSS",
-                                    }}
-                                update_one(_id, data_update)
-
-
-
-                        if _STATUS == "BUY" and _DIRECTION == "SHORT" and\
-                            _CURRENT_PRICE >= _STOP_PRICE:
-
-                            logger.info(f"STOP LOSS na crypto: {_CRYPTO_NAME}")
-
-                            status_closing = closed_market(
-                                crypto=_CRYPTO_NAME,
-                                direction=positions["positionSide"],
-                                amount=positions["positionAmt"],
-                            )
-
-                            if status_closing[0] and \
-                                    status_closing[1]["status"] == "NEW":
-
-                                _id = {"_id": _ID}
-                                data_update = {
-                                    "$set": {
-                                        "status": "STOP_LOSS",
-                                    }}
-                                update_one(_id, data_update)
-
-
-                    except Exception as e:
-                        logger.error("Erro STOP LOSS", e)
-                        pass
-
-
-        # mongo_db.delete_old_date()
-
-        # time.sleep(10)
-
-
+        # mongo_db.delete_old_date(
+        time.sleep(5)
 asyncio.run(trade())
 
 
