@@ -38,6 +38,11 @@ class MongoDb:
         }
         status = self.collection.delete_many(query)
 
+
+    def delete_all_db(self):
+        self.collection.delete_many({})
+
+
     def find_one(self, query):
         return self.collection.find_one(query)
     

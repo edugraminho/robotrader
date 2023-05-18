@@ -23,7 +23,6 @@ from Libraries.queries import (
     new_buy_orders,
     update_one,
     check_closing_orders_db,
-    open_orders_db
 )
 
 logger = get_logger(__name__)
@@ -204,7 +203,11 @@ def trade():
 
         print(f"Tempo de execução: {exec_time:.2f} segundos", end="\r")
 
-        # mongo_db.delete_old_date(
+        # Se nao tiver nenhuma posicao aberta, deleta o banco
+        if len(all_open_positions) == 0:
+            logger.info(f"*** Limpeza total no banco ***")
+            mongo_db.delete_all_db()
+
         time.sleep(5)
 asyncio.run(trade())
 
