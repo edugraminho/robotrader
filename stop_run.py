@@ -100,14 +100,11 @@ def trade():
                     except Exception as e:
                         logger.error("Erro STOP LOSS", e)
                         pass
-            actual_time = time.time()
-            
-        exec_time = actual_time - initial_time
 
+        actual_time = time.time()
+        exec_time = actual_time - initial_time
         print(f"Tempo de execução: {exec_time:.2f} segundos", end="\r")
 
-
-        # mongo_db.delete_old_date()
 
         time.sleep(10)
 

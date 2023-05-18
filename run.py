@@ -38,9 +38,7 @@ def trade():
         initial_time = time.time()
 
         untreated_message = get_messages_group()
-
         signal_data = processing_signal_messages(untreated_message)
-
         insert_new_signal_db(signal_data)
 
         ##########################################################################
@@ -197,16 +195,14 @@ def trade():
                         # update_one(cll, id_obj, data_update)
                         logger.error(f'Exception na VENDA: {_ID} - {e}')
                         pass
-            actual_time = time.time()
-            
-        exec_time = actual_time - initial_time
 
+        actual_time = time.time()
+        exec_time = actual_time - initial_time
         print(f"Tempo de execução: {exec_time:.2f} segundos", end="\r")
 
         # Se nao tiver nenhuma posicao aberta, deleta o banco
         if len(all_open_positions) == 0:
-            logger.info(f"*** Limpeza total no banco ***")
-            mongo_db.delete_all_db()
+            mongo_db.delete_old_date()
 
         time.sleep(5)
 asyncio.run(trade())

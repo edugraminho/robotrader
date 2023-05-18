@@ -29,6 +29,7 @@ DB_USER = 'robotraderUser'
 DB_PASSWORD = 'qTyoyZka0dsi1UwI'
 CLUSTER = 'cluster0'
 URI = f'mongodb+srv://{DB_USER}:{DB_PASSWORD}@{CLUSTER}.94tddj0.mongodb.net/?retryWrites=true&w=majority'
+DATA_TO_DELETE_OLD_DATA_MONGODB = datetime.now() - timedelta(days=3)
 
 
 # ======================================================
@@ -37,7 +38,6 @@ URI = f'mongodb+srv://{DB_USER}:{DB_PASSWORD}@{CLUSTER}.94tddj0.mongodb.net/?ret
 # ====================== DIRETÓRIOS LOCAIS e DATAS ======================
 ROOT = Path(os.path.dirname(os.path.abspath(__file__))).parent
 DATA_DIRECTORY = os.path.join(ROOT, "Data")
-DATA_TO_DELETE_OLD_DATA_MONGODB = datetime.now() - timedelta(days=7)
 NOW = datetime.now().strftime("%d/%m %H:%M")
 CURRENT_DAY = datetime.now().strftime("%d/%m")
 # ===============================================================
