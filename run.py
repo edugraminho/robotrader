@@ -27,14 +27,15 @@ from Libraries.queries import (
 
 logger = get_logger(__name__)
 
-mongo_db = MongoDb()
-
-mongo_db.test_connection_db()
 
 
 def trade():
 
     while True:
+        mongo_db = MongoDb()
+
+        mongo_db.test_connection_db()
+
         initial_time = time.time()
 
         untreated_message = get_messages_group()
@@ -202,7 +203,10 @@ def trade():
 
         # Se nao tiver nenhuma posicao aberta, deleta o banco
         if len(all_open_positions) == 0:
-            mongo_db.delete_old_date()
+            pass
+            #mongo_db.delete_all_db()
+        
+        mongo_db.close_conn()
 
         time.sleep(5)
 asyncio.run(trade())

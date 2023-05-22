@@ -24,11 +24,6 @@ from Libraries.queries import (
 
 logger = get_logger(__name__)
 
-mongo_db = MongoDb()
-
-mongo_db.test_connection_db()
-
-
 def trade():
 
     while True:

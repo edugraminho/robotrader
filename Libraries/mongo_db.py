@@ -14,7 +14,7 @@ class MongoDb:
     def test_connection_db(self):
         try:
             self.client.admin.command('ping')
-            logger.info("Conexão bem-sucedida!")
+            #logger.info("Conexão bem-sucedida!")
 
         except Exception as e:
             logger.error(f"Falha ao conectar!  {e}")
@@ -48,3 +48,6 @@ class MongoDb:
     
     def insert_one(self, query):
         return self.collection.insert_one(query)
+
+    def close_conn(self):
+        return self.client.close()
