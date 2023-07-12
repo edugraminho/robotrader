@@ -26,85 +26,81 @@ logger = get_logger(__name__)
 
 def trade():
 
-    while True:
-        initial_time = time.time()
-        ############### STOP LOSS MANUAL ################
-        all_open_positions = get_all_open_positions_binance()
+    initial_time = time.time()
+    ############### STOP LOSS MANUAL ################
+    all_open_positions = get_all_open_positions_binance()
 
-        open_orders = open_orders_db()
+    open_orders = open_orders_db()
 
-        for open_order in open_orders:
-            _ID = open_order["_id"]
-            _CRYPTO_NAME = open_order["crypto_name"]
-            _DIRECTION = open_order["direction"]
-            _STATUS = open_order["status"]
-            _STOP_PRICE = float(open_order["stop_price"])
-            
-            for positions in all_open_positions:
-                if _CRYPTO_NAME == positions["symbol"]:
-                    
-                    try:
-                        _CURRENT_PRICE = float(
-                            get_current_price_crypto(_CRYPTO_NAME))
+    for open_order in open_orders:
+        _ID = open_order["_id"]
+        _CRYPTO_NAME = open_order["crypto_name"]
+        _DIRECTION = open_order["direction"]
+        _STATUS = open_order["status"]
+        _STOP_PRICE = float(open_order["stop_price"])
+        
+        for positions in all_open_positions:
+            if _CRYPTO_NAME == positions["symbol"]:
+                
+                try:
+                    _CURRENT_PRICE = float(
+                        get_current_price_crypto(_CRYPTO_NAME))
 
-                        if _STATUS == "BUY" and _DIRECTION == "LONG" and\
-                            _CURRENT_PRICE <= _STOP_PRICE:
+                    if _STATUS == "BUY" and _DIRECTION == "LONG" and\
+                        _CURRENT_PRICE <= _STOP_PRICE:
 
-                            logger.info(f"STOP LOSS na crypto: {_CRYPTO_NAME}")
+                        logger.info(f"STOP LOSS na crypto: {_CRYPTO_NAME}")
 
-                            status_closing = closed_market(
-                                crypto=_CRYPTO_NAME,
-                                direction=positions["positionSide"],
-                                amount=positions["positionAmt"],
-                            )
+                        status_closing = closed_market(
+                            crypto=_CRYPTO_NAME,
+                            direction=positions["positionSide"],
+                            amount=positions["positionAmt"],
+                        )
 
-                            if status_closing[0] and \
-                                    status_closing[1]["status"] == "NEW":
+                        if status_closing[0] and \
+                                status_closing[1]["status"] == "NEW":
 
-                                _id = {"_id": _ID}
-                                data_update = {
-                                    "$set": {
-                                        "status": "STOP_LOSS",
-                                    }}
-                                update_one(_id, data_update)
-
+                            _id = {"_id": _ID}
+                            data_update = {
+                                "$set": {
+                                    "status": "STOP_LOSS",
+                                }}
+                            update_one(_id, data_update)
 
 
-                        if _STATUS == "BUY" and _DIRECTION == "SHORT" and\
-                            _CURRENT_PRICE >= _STOP_PRICE:
 
-                            logger.info(f"STOP LOSS na crypto: {_CRYPTO_NAME}")
+                    if _STATUS == "BUY" and _DIRECTION == "SHORT" and\
+                        _CURRENT_PRICE >= _STOP_PRICE:
 
-                            status_closing = closed_market(
-                                crypto=_CRYPTO_NAME,
-                                direction=positions["positionSide"],
-                                amount=positions["positionAmt"],
-                            )
+                        logger.info(f"STOP LOSS na crypto: {_CRYPTO_NAME}")
 
-                            if status_closing[0] and \
-                                    status_closing[1]["status"] == "NEW":
+                        status_closing = closed_market(
+                            crypto=_CRYPTO_NAME,
+                            direction=positions["positionSide"],
+                            amount=positions["positionAmt"],
+                        )
 
-                                _id = {"_id": _ID}
-                                data_update = {
-                                    "$set": {
-                                        "status": "STOP_LOSS",
-                                    }}
-                                update_one(_id, data_update)
+                        if status_closing[0] and \
+                                status_closing[1]["status"] == "NEW":
 
-
-                    except Exception as e:
-                        logger.error("Erro STOP LOSS", e)
-                        pass
-
-        actual_time = time.time()
-        exec_time = actual_time - initial_time
-        print(f"Tempo de execução: {exec_time:.2f} segundos", end="\r")
+                            _id = {"_id": _ID}
+                            data_update = {
+                                "$set": {
+                                    "status": "STOP_LOSS",
+                                }}
+                            update_one(_id, data_update)
 
 
-        time.sleep(10)
+                except Exception as e:
+                    logger.error("Erro STOP LOSS", e)
+                    pass
+
+    actual_time = time.time()
+    exec_time = actual_time - initial_time
+    print(f"Tempo de execução: {exec_time:.2f} segundos", end="\r")
 
 
-asyncio.run(trade())
+trade()
 
 
 """
