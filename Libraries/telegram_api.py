@@ -35,7 +35,7 @@ def get_messages_group():
                 limit=500,
                 hash=-0,
             ))
-            title = "Scalping_300%"
+            title = "VIP CLUB | BinancePro"
             for chat in result.chats:
 
                 if chat.title == title:

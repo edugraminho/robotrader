@@ -149,7 +149,6 @@ def get_balance():
 
 def find_value_to_aport(crypto):
     try:
-
         price_crypto = get_current_price_crypto(crypto)
         total_balance = get_balance()[0]["total_balance"]
 

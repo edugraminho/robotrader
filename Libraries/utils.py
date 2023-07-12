@@ -22,15 +22,15 @@ def processing_signal_messages(untreated_data):
                 reply_to = data.reply_to.reply_to_msg_id \
                     if data.reply_to is not None else ""
 
-                new_crypto = re.search('(?<=I... )(.[^#]*USDT)', data.message)
-                closed_crypto = re.search('(?<=#)(.[^#]*USDT)', data.message)
+                new_crypto = re.search("#(\w+)/", data.message)
+                # closed_crypto = re.search('(?<=#)(.[^#]*USDT)', data.message)
 
-                direction = re.search('LONG|SHORT', data.message)
+                direction = re.search("\((\w+)\S*,", data.message)
 
-                closed_signal = re.search(
-                    'Closed|All entry|Cancelled', data.message)
+                # closed_signal = re.search(
+                #     'Closed|All entry|Cancelled', data.message)
 
-                all_take_profit = re.search('All take-profit', data.message)
+                # all_take_profit = re.search('All take-profit', data.message)
 
                 crypto_name = None
                 direction_type = None
@@ -38,25 +38,25 @@ def processing_signal_messages(untreated_data):
                 insert = False
 
                 if new_crypto != None:
-                    crypto_name = new_crypto[0].strip().upper()
+                    crypto_name = new_crypto[1].strip().upper()
                     signal_type = "NEW"
 
-                if closed_crypto != None:
-                    crypto_name = closed_crypto[0].strip().replace(
-                        "/", "").upper()
+                # if closed_crypto != None:
+                #     crypto_name = closed_crypto[0].strip().replace(
+                #         "/", "").upper()
 
-                if closed_signal != None:
-                    signal_type = "CLOSE"
-                    insert = True
-                    direction_type = "OPEN_ORDER"
+                # if closed_signal != None:
+                #     signal_type = "CLOSE"
+                #     insert = True
+                #     direction_type = "OPEN_ORDER"
 
-                if all_take_profit != None:
-                    signal_type = "ALL_TAKE_PROFIT"
-                    insert = True
-                    direction_type = "OPEN_ORDER"
+                # if all_take_profit != None:
+                #     signal_type = "ALL_TAKE_PROFIT"
+                #     insert = True
+                #     direction_type = "OPEN_ORDER"
 
-                if direction != None:
-                    direction_type = direction[0].strip().upper()
+                if direction != None and reply_to == "":
+                    direction_type = direction[1].strip().upper()
                     insert = True
 
                 if insert:
@@ -64,7 +64,7 @@ def processing_signal_messages(untreated_data):
                         "_id": data.id,
                         "reply_to": reply_to,
                         "date": str(_date),
-                        "crypto_name": crypto_name,
+                        "crypto_name": f"{crypto_name}USDT",
                         "direction": direction_type,
                         "signal_type": signal_type,
                         "status": "",

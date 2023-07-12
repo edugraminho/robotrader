@@ -5,29 +5,19 @@ from pathlib import Path, PurePath
 import os
 from datetime import datetime
 import math
+import pytz
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 
 TODAY = datetime.today().strftime("%d%m - %H:%M")
-# ==================== CHROME ==========================
-URL = "https://www.binance.com/"
-URL_SIGNALS = "https://t.me/s/signalscryptoglobal"
-URL_APK = "http://localhost:4723/wd/hub"
-
-BROWSER_DIRECTORY = "C:\\Projects\\robotrader\\GoogleChromePortable\\App\\Chrome-bin\\chrome.exe"
-CHROMEDRIVER_DIRECTORY = "C:\\Projects\\robotrader\\chromedriver\\chromedriver.exe"
-# ======================================================
-
-# =================== Timeout Robot ====================
-DEFAULT_SELENIUM_TIMEOUT = '40 seconds'
-DEFAULT_DOWNLOAD_TIMEOUT = '60 seconds'
-# ======================================================
 
 # ====================== DIRETÓRIOS LOCAIS ======================
 ROOT = Path(os.path.dirname(os.path.abspath(__file__))).parent
 NOW = datetime.now().strftime("%d%m - %H:%M")
 DATA_DIRECTORY = os.path.join(ROOT, "Data")
 # ===============================================================
-
 """꧁༺ 𝓢𝓒𝓐𝓛𝓟𝓘𝓝𝓖 300 ༻꧂
 
 ✬S◦C°A˚L°P◦I... GTCUSDT ...N◦G°3˚0°0◦0✬
@@ -45,63 +35,190 @@ Target 3 - 2.45004
 Target 4 - 2.47406
 Target 5 - 2.49808"""
 
-value = '''
-Binance Futures, ByBit USDT
-ADA/USDT All take-profit targets achieved 😎
-'''
-# Binance Futures
-#ZEN/USDT Closed due to opposite direction signal ⚠
+
+
+value = """
+🔥 #100XX/USDT (Long📉, x20) 🔥
+
+Entry - 0.0337
+SL - 25-30%
+
+Take-Profit:
+🥇 0.03304 (40% of profit)
+🥈 0.03272 (60% of profit)
+🥉 0.0324 (80% of profit)
+🚀 0.0321 (100% of profit)
+
 """
-ByBit USDT, Binance Futures
-#IOST/USDT Cancelled ❌
-Target achieved before entering the entry zone
-"""
 
-# Binance Futures
-#GTC/USDT All entry targets achieved
 
-def insert_csv(value):
-    now = datetime.now().strftime("%d/%m-%H:%M")
-    fieldname = [
-        "index",
-        "index_signal",
-        "date",
-        "crypto_name",
-        "direction",
-        "signal_type", 
-        "buy_or_sell",
-        "status"
-        ]
+def insert_csv(untreated_data):
+        all_msgs_data = []
 
-    new_crypto = re.search('(?<=I... )(.[^#]*USDT)', value)
-    closed_crypto = re.search('(?<=#)(.[^#]*USDT)', value)
 
-    direction = re.search('LONG|SHORT', value)
+        new_crypto = re.search("#(\w+)/", untreated_data)
+                # closed_crypto = re.search('(?<=#)(.[^#]*USDT)', data)
 
-    closed_signal = re.search('Closed|All entry|All take-profit|Cancelled', value)
-    print(closed_signal)
-    return closed_signal
-    crypto_name = None
-    direction = None
-    signal_type = None
-    
-    if new_crypto != None:
-        crypto_name = new_crypto[0].strip()
-        signal_type = "new"
+        direction = re.search("\((\w+)\S*,", untreated_data)
+        logger.info(new_crypto[1].strip().upper())
+        logger.info(direction[1].strip().upper())
 
-    if closed_crypto != None:
-        crypto_name = closed_crypto[0].strip().replace("/", "")
-    
-    if closed_signal != None:
-        signal_type = "closed"
+        return
 
-    if direction != None:
-        direction = direction[0].strip()
-    else:
-        direction = "-"
+        for data in untreated_data:
+            if data != None:
+
+                # _date = data.date.astimezone(
+                #     pytz.timezone("America/Sao_Paulo")).strftime("%d/%m %H:%M:%S")
+
+                # reply_to = data.reply_to.reply_to_msg_id \
+                #     if data.reply_to is not None else ""
+
+                new_crypto = re.search("#(\w+)/", data)
+                # closed_crypto = re.search('(?<=#)(.[^#]*USDT)', data)
+
+                direction = re.search("\((\w+)\S*,", data)
+
+                # closed_signal = re.search(
+                    # 'Closed|All entry|Cancelled', data.message)
+
+                # all_take_profit = re.search('All take-profit', data.message)
+
+                logger.info(new_crypto)
+                logger.info(direction)
+
+                crypto_name = None
+                direction_type = None
+                signal_type = None
+                insert = False
+
+                if new_crypto != None:
+                    crypto_name = new_crypto[0].strip().upper()
+                    signal_type = "NEW"
+
+                # if closed_crypto != None:
+                #     crypto_name = closed_crypto[0].strip().replace(
+                #         "/", "").upper()
+
+                # if closed_signal != None:
+                #     signal_type = "CLOSE"
+                #     insert = True
+                #     direction_type = "OPEN_ORDER"
+
+                # if all_take_profit != None:
+                #     signal_type = "ALL_TAKE_PROFIT"
+                #     insert = True
+                #     direction_type = "OPEN_ORDER"
+
+                if direction != None:
+                    direction_type = direction[0].strip().upper()
+                    insert = True
+
+                if insert:
+                    signal_message = {
+                        "_id": data.id,
+                        "reply_to": reply_to,
+                        # "date": str(_date),
+                        "crypto_name": crypto_name,
+                        "direction": direction_type,
+                        "signal_type": signal_type,
+                        "status": "",
+                        "price_buy": "",
+                        "stop_price": "",
+                        "qty": "",
+                    }
+
+                    all_msgs_data.append(signal_message)
+        return all_msgs_data
 
 
 insert_csv(value)
+
+
+
+
+
+def processing_signal_messages(untreated_data):
+    try:
+        #logger.info(f"Processando as mensagem...")
+
+        all_msgs_data = []
+
+        for data in untreated_data:
+            if data.message != None:
+
+                _date = data.date.astimezone(
+                    pytz.timezone("America/Sao_Paulo")).strftime("%d/%m %H:%M:%S")
+
+                reply_to = data.reply_to.reply_to_msg_id \
+                    if data.reply_to is not None else ""
+
+                new_crypto = re.search('(?<=I... )(.[^#]*USDT)', data.message)
+                closed_crypto = re.search('(?<=#)(.[^#]*USDT)', data.message)
+
+                direction = re.search('LONG|SHORT', data.message)
+
+                closed_signal = re.search(
+                    'Closed|All entry|Cancelled', data.message)
+
+                all_take_profit = re.search('All take-profit', data.message)
+
+                crypto_name = None
+                direction_type = None
+                signal_type = None
+                insert = False
+
+                if new_crypto != None:
+                    crypto_name = new_crypto[0].strip().upper()
+                    signal_type = "NEW"
+
+                if closed_crypto != None:
+                    crypto_name = closed_crypto[0].strip().replace(
+                        "/", "").upper()
+
+                if closed_signal != None:
+                    signal_type = "CLOSE"
+                    insert = True
+                    direction_type = "OPEN_ORDER"
+
+                if all_take_profit != None:
+                    signal_type = "ALL_TAKE_PROFIT"
+                    insert = True
+                    direction_type = "OPEN_ORDER"
+
+                if direction != None:
+                    direction_type = direction[0].strip().upper()
+                    insert = True
+
+                if insert:
+                    signal_message = {
+                        "_id": data.id,
+                        "reply_to": reply_to,
+                        "date": str(_date),
+                        "crypto_name": crypto_name,
+                        "direction": direction_type,
+                        "signal_type": signal_type,
+                        "status": "",
+                        "price_buy": "",
+                        "stop_price": "",
+                        "qty": "",
+                    }
+
+                    all_msgs_data.append(signal_message)
+        return all_msgs_data
+    except Exception as e:
+        logger.error(e)
+        pass
+
+
+
+
+
+
+
+
+
+
 
 def read_csv():
     new_dict = []

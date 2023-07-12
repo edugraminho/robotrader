@@ -4,11 +4,11 @@ from datetime import datetime, timedelta
 
 
 # ==================== API BINANCE ====================
-QNT_CRYPTOS_TO_PURCHASE = 50 #o maximo de cryptos a serem negociadas, total / pelo saldo
-PERCENTAGE_STOP = 1
-LEVERAGE = 10
+QNT_CRYPTOS_TO_PURCHASE = 10 #o maximo de cryptos a serem negociadas, total / pelo saldo
+PERCENTAGE_STOP = 2
+LEVERAGE = 20
 
-LIST_TARGETS_TAKE_PROFITS = [3, 6]
+LIST_TARGETS_TAKE_PROFITS = [4, 7]
 
 # API_KEY EDU
 API_KEY = "KMd7eeFhDUElfn3bDZDbJKZtWJfFFtBXnC9cR18H6fy4t9kUsEIcggYuy8AVMd1p"
@@ -20,7 +20,7 @@ API_SECRET = "SJLOc00gCFdLNcq25YcPlkD6i9aozYWYmp1hvuyXQ6cLKCmbCWQRabqVE4t5N3tm"
 API_ID = 11074177
 API_HASH = '15a39f85549bd32cd83935b3dd04d26c'
 
-MESSAGES_LIMIT = 10
+MESSAGES_LIMIT = 5
 # ======================================================
 
 
