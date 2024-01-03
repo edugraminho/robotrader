@@ -22,6 +22,10 @@ coverage.xml
 cover/
 
 
+
+config.py
+
+
 # Flask stuff:
 instance/
 .webassets-cache
